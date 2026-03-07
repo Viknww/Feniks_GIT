@@ -1,0 +1,143 @@
+﻿@page "/objects"
+@using Feniks.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Объекты строительства</h2>
+        <button class="btn btn-primary" @onclick="GoToNewObject">
+            <i class="bi bi-plus-circle me-1"></i>Новый объект
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3">Загрузка объектов...</p>
+        </div>
+    }
+    else if (objects == null || !objects.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-building fs-1 d-block mb-3"></i>
+            <p>Нет объектов строительства</p>
+            <button class="btn btn-outline-primary" @onclick="GoToNewObject">
+                Создать первый объект
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var obj in objects)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <span class="badge @GetStatusBadge(obj.Status)">@obj.Status</span>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditObject(obj.Id)" title="Редактировать">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteObject(obj.Id)" title="Удалить">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">@obj.Name</h5>
+                            <p class="card-text small text-muted mb-2">
+                                <i class="bi bi-person me-1"></i>@obj.Customer
+                            </p>
+                            @if (!string.IsNullOrEmpty(obj.Address))
+                            {
+                                <p class="card-text small text-muted mb-2">
+                                    <i class="bi bi-geo-alt me-1"></i>@obj.Address
+                                </p>
+                            }
+                            <div class="d-flex justify-content-between mt-3">
+                                <span class="fw-bold">Бюджет: @obj.Budget.ToString("N0") ₽</span>
+                                <span class="badge bg-info">0</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-outline-primary btn-sm w-100" @onclick="() => GoToObjectEstimates(obj.Id)">
+                                <i class="bi bi-layers me-1"></i>Сметы объекта
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<ConstructionObject>? objects;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadObjects();
+    }
+
+    private async Task LoadObjects()
+    {
+        try
+        {
+            isLoading = true;
+            objects = await Http.GetFromJsonAsync<List<ConstructionObject>>("http://localhost:5050/api/ConstructionObjects");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Черновик" => "bg-secondary",
+        "В работе" => "bg-primary",
+        "Завершен" => "bg-success",
+        "Заморожен" => "bg-warning",
+        _ => "bg-info"
+    };
+
+    private void GoToNewObject()
+    {
+        Navigation.NavigateTo("/object/new");
+    }
+
+    private void EditObject(int id)
+    {
+        Navigation.NavigateTo($"/object/{id}/edit");
+    }
+
+    private void GoToObjectEstimates(int id)
+    {
+        Navigation.NavigateTo($"/objects/{id}/estimates");
+    }
+
+    private async Task DeleteObject(int id)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", "Удалить объект?"))
+        {
+            try
+            {
+                await Http.DeleteAsync($"http://localhost:5050/api/ConstructionObjects/{id}");
+                await LoadObjects();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка удаления: {ex.Message}");
+            }
+        }
+    }
+}

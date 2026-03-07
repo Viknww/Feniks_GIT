@@ -1,0 +1,22 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Feniks.Shared.Models;
+
+public class Reference
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    
+    public int? CategoryId { get; set; }
+    public ReferenceCategory? Category { get; set; }
+    
+    public string Status { get; set; } = "Черновик";
+    
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? UpdatedAt { get; set; }
+    
+    public ICollection<ReferenceItem> Items { get; set; } = new List<ReferenceItem>();
+}

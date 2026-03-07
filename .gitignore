@@ -1,0 +1,30 @@
+﻿## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.pidb
+*.svclog
+*.log
+*.vs
+
+## Visual Studio
+.vs/
+.idea/
+*.swp
+*.swo
+*.*~
+*.bak
+*.old
+*.temp
+
+## Project specific
+src/**/bin/
+src/**/obj/
+src/**/Debug/
+src/**/Release/
+
+## OS
+.DS_Store
+Thumbs.db

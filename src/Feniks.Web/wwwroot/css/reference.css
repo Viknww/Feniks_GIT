@@ -1,0 +1,297 @@
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+
+/* ========================================
+   Стили для страницы справочника (ReferencePage.razor)
+   ======================================== */
+
+.reference-page {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+}
+
+.breadcrumbs {
+    font-size: 14px;
+    padding: 0.5rem 1rem;
+    background-color: white;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.breadcrumbs a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+.reference-header {
+    border-left: 4px solid #0d6efd;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    transition: all 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+.table {
+    margin-bottom: 0;
+    background-color: white;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.table th {
+    font-size: 0.85rem;
+    font-weight: 600;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+    padding: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    font-size: 0.9rem;
+    vertical-align: middle;
+    padding: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table-primary {
+    background-color: #cfe2ff !important;
+}
+
+.table input[type="text"],
+.table input[type="number"],
+.table select {
+    width: 100%;
+    min-width: 80px;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.85rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+}
+
+.table input[type="text"]:focus,
+.table input[type="number"]:focus,
+.table select:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.table input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    cursor: pointer;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+
+.modal {
+    z-index: 1050;
+}
+
+.modal-content {
+    border: none;
+    box-shadow: 0 1rem 3rem rgba(0,0,0,0.175);
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.position-sticky-bottom {
+    position: sticky;
+    bottom: 1rem;
+    z-index: 100;
+    box-shadow: 0 -4px 6px rgba(0,0,0,0.05);
+}
+
+/* Стили для левого меню */
+.sidebar-wrapper {
+    height: 100vh;
+    background: linear-gradient(180deg, #1a1f2b 0%, #141824 100%);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-header {
+    padding: 1.5rem 1rem 1rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.logo h5 {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 0.875rem;
+    z-index: 10;
+}
+
+.search-box input {
+    background-color: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    padding-left: 30px;
+    border-radius: 8px;
+}
+
+.search-box input:focus {
+    background-color: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.2);
+    box-shadow: none;
+    color: white;
+}
+
+.search-box input::placeholder {
+    color: #6c757d;
+}
+
+.sidebar-content {
+    padding: 1rem 0.75rem;
+}
+
+.tree-view {
+    font-size: 0.9rem;
+}
+
+.tree-item {
+    margin-bottom: 0.25rem;
+}
+
+.tree-item-header {
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tree-item-header:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.tree-children {
+    margin-top: 0.25rem;
+    border-left: 1px dashed rgba(255,255,255,0.2);
+    padding-left: 0.5rem;
+}
+
+.tree-child-item {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.tree-child-item:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+
+.toggle-icon {
+    color: #6c757d;
+    font-size: 0.7rem;
+}
+
+.object-icon {
+    font-size: 1rem;
+}
+
+.child-icon {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Стили для подсветки активных элементов (как в объектах) */
+.tree-child-item.active-estimate {
+    background-color: rgba(255, 215, 0, 0.25) !important;
+    border-left: 4px solid #f1c40f !important;
+    border-radius: 8px !important;
+    margin-left: -2px !important;
+    padding-left: 8px !important;
+    padding-right: 4px !important;
+    box-shadow: 0 2px 8px rgba(241, 196, 15, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.tree-child-item.active-estimate .text-white-50 {
+    color: #fff5d6 !important;
+    font-weight: 600 !important;
+}
+
+.tree-child-item.active-estimate i {
+    color: #f1c40f !important;
+}
+
+.tree-item.active-object > .tree-item-header {
+    background-color: rgba(255, 215, 0, 0.2) !important;
+    border-left: 4px solid #f1c40f !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(241, 196, 15, 0.15) !important;
+}
+
+.tree-item.active-object .tree-item-header span,
+.tree-item.active-object .tree-item-header i {
+    color: #fff5d6 !important;
+    font-weight: 600 !important;
+}
+
+.tree-item.active-object .tree-item-header .badge {
+    background-color: #f1c40f !important;
+    color: #1a1a1a !important;
+}
+
+.tree-item.parent-of-active > .tree-item-header {
+    background-color: rgba(255, 215, 0, 0.1) !important;
+    border-left: 4px solid #f39c12 !important;
+    border-radius: 8px !important;
+}
+
+.tree-child-item.active-estimate .bi-check-circle-fill {
+    color: #f1c40f !important;
+}

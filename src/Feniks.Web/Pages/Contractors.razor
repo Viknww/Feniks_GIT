@@ -1,0 +1,194 @@
+﻿@page "/contractors"
+@using Feniks.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h1 class="mb-4"> Контрагенты</h1>
+
+<!-- Форма добавления нового контрагента -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"> Добавить нового контрагента</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <input type="text" class="form-control" placeholder="Наименование *" @bind="newContractor.Name" />
+            </div>
+            <div class="col-md-2 mb-2">
+                <select class="form-control" @bind="newContractor.Type">
+                    <option value="Заказчик">Заказчик</option>
+                    <option value="Поставщик">Поставщик</option>
+                    <option value="Субподрядчик">Субподрядчик</option>
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <input type="text" class="form-control" placeholder="Телефон" @bind="newContractor.Phone" />
+            </div>
+            <div class="col-md-2 mb-2">
+                <input type="email" class="form-control" placeholder="Email" @bind="newContractor.Email" />
+            </div>
+            <div class="col-md-2 mb-2">
+                <input type="text" class="form-control" placeholder="ИНН" @bind="newContractor.Inn" />
+            </div>
+            <div class="col-md-3 mb-2">
+                <input type="text" class="form-control" placeholder="Адрес" @bind="newContractor.Address" />
+            </div>
+            <div class="col-md-2 mb-2">
+                <button class="btn btn-success w-100" @onclick="AddContractor">Добавить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Таблица контрагентов -->
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Загрузка контрагентов...</p>
+    </div>
+}
+else if (contractors == null || contractors.Count == 0)
+{
+    <div class="alert alert-info text-center py-5">
+        <i class="bi bi-people fs-1 d-block mb-3"></i>
+        <h5>Нет контрагентов</h5>
+        <p>Добавьте первого контрагента с помощью формы выше</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Наименование</th>
+                    <th>Тип</th>
+                    <th>Телефон</th>
+                    <th>Email</th>
+                    <th>ИНН</th>
+                    <th>Адрес</th>
+                    <th>Дата создания</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var contractor in contractors)
+                {
+                    <tr>
+                        <td><strong>@contractor.Id</strong></td>
+                        <td>@contractor.Name</td>
+                        <td>
+                            <span class="badge @GetTypeBadge(contractor.Type)">@contractor.Type</span>
+                        </td>
+                        <td>@contractor.Phone</td>
+                        <td>@contractor.Email</td>
+                        <td>@contractor.Inn</td>
+                        <td>@contractor.Address</td>
+                        <td>@contractor.CreatedAt.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteContractor(contractor.Id)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<style>
+    .table td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+    }
+</style>
+
+@code {
+    private List<Contractor>? contractors;
+    private Contractor newContractor = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadContractors();
+    }
+
+    private async Task LoadContractors()
+    {
+        try
+        {
+            isLoading = true;
+            contractors = await Http.GetFromJsonAsync<List<Contractor>>("http://localhost:5050/api/Contractors");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task AddContractor()
+    {
+        if (string.IsNullOrWhiteSpace(newContractor.Name))
+        {
+            await ShowAlert("Ошибка", "Наименование обязательно для заполнения");
+            return;
+        }
+
+        try
+        {
+            await Http.PostAsJsonAsync("http://localhost:5050/api/Contractors", newContractor);
+            await LoadContractors();
+            newContractor = new Contractor(); // Очищаем форму
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка добавления: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteContractor(int id)
+    {
+        if (await ConfirmAction($"Удалить контрагента?"))
+        {
+            try
+            {
+                await Http.DeleteAsync($"http://localhost:5050/api/Contractors/{id}");
+                await LoadContractors();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка удаления: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task<bool> ConfirmAction(string message)
+    {
+        return await Http.GetFromJsonAsync<bool>($"http://localhost:5002/api/confirm?message={message}");
+    }
+
+    private async Task ShowAlert(string title, string message)
+    {
+        // Простая альтернатива - используем JavaScript
+        await Http.GetFromJsonAsync<bool>($"http://localhost:5002/api/alert?title={title}&message={message}");
+    }
+
+    private string GetTypeBadge(string type) => type switch
+    {
+        "Заказчик" => "bg-primary",
+        "Поставщик" => "bg-success",
+        "Субподрядчик" => "bg-warning",
+        _ => "bg-secondary"
+    };
+}

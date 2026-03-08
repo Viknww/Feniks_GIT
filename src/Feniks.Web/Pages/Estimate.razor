@@ -8,6 +8,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @inject IWebAssemblyHostEnvironment HostEnvironment
+@inject NotificationService NotificationService
 
 <link href="css/estimate.css" rel="stylesheet" />
 
@@ -66,83 +67,92 @@
             </div>
         </div>
 
-        <!-- Блоки стоимости -->
-        <div class="row g-4 mb-4">
-            <!-- Первый блок: Работы/Материалы/Механизмы/Доставка -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-3">Себестоимость, ₽</h6>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Работы</span>
-                            <span class="fw-bold">@workCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Материалы</span>
-                            <span class="fw-bold">@materialCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Механизмы</span>
-                            <span class="fw-bold">@machineryCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Доставка</span>
-                            <span class="fw-bold">@deliveryCost.ToString("N0") ₽</span>
-                        </div>
-                    </div>
+       <!-- Блоки стоимости -->
+<div class="row g-4 mb-4">
+    <!-- Первый блок: Себестоимость -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold fs-5 mb-0">Себестоимость, ₽</h6>
+                    <span class="fw-bold fs-5">@totalCost.ToString("N0") ₽</span>
                 </div>
-            </div>
-
-            <!-- Второй блок: Прибыль -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-3">Прибыль, ₽</h6>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Работы</span>
-                            <span class="fw-bold" style="color: #b45f06;">@profitWork.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Материалы</span>
-                            <span class="fw-bold" style="color: #b45f06;">@profitMaterial.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Механизмы</span>
-                            <span class="fw-bold" style="color: #b45f06;">@profitMachineryCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Доставка</span>
-                            <span class="fw-bold" style="color: #b45f06;">@profitDelivery.ToString("N0") ₽</span>
-                        </div>
-                    </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Работы</span>
+                    <span class="fw-bold">@workCost.ToString("N0") ₽</span>
                 </div>
-            </div>
-
-            <!-- Третий блок: Стоимость для заказчика -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-3">Стоимость для заказчика, ₽</h6>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Работы</span>
-                            <span class="fw-bold text-success">@customerWorkCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Материалы</span>
-                            <span class="fw-bold text-success">@customerMaterialCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Механизмы</span>
-                            <span class="fw-bold">@customerMachineryCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Доставка</span>
-                            <span class="fw-bold text-success">@customerDeliveryCost.ToString("N0") ₽</span>
-                        </div>
-                    </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Материалы</span>
+                    <span class="fw-bold">@materialCost.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Механизмы</span>
+                    <span class="fw-bold">@machineryCost.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Доставка</span>
+                    <span class="fw-bold">@deliveryCost.ToString("N0") ₽</span>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Второй блок: Прибыль -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold fs-5 mb-0" style="color: #b45f06;">Прибыль, ₽</h6>
+                    <span class="fw-bold fs-5" style="color: #b45f06;">@profitTotal.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Работы</span>
+                    <span class="fw-bold" style="color: #b45f06;">@profitWork.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Материалы</span>
+                    <span class="fw-bold" style="color: #b45f06;">@profitMaterial.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Механизмы</span>
+                    <span class="fw-bold" style="color: #b45f06;">@profitMachineryCost.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Доставка</span>
+                    <span class="fw-bold" style="color: #b45f06;">@profitDelivery.ToString("N0") ₽</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Третий блок: Стоимость для заказчика -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold fs-5 mb-0 text-success">Стоимость для заказчика, ₽</h6>
+                    <span class="fw-bold fs-5 text-success">@customerTotal.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Работы</span>
+                    <span class="fw-bold text-success">@customerWorkCost.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Материалы</span>
+                    <span class="fw-bold text-success">@customerMaterialCost.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Механизмы</span>
+                    <span class="fw-bold text-success">@customerMachineryCost.ToString("N0") ₽</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Доставка</span>
+                    <span class="fw-bold text-success">@customerDeliveryCost.ToString("N0") ₽</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
         <!-- Этапы сметы -->
         <div class="stages-container">
@@ -172,7 +182,7 @@
                                     @if (editingStageId == stage.Id)
                                     {
                                         <input type="text" class="form-control form-control-sm" @bind="editingStageName" 
-                                               style="width: 300px;" @onkeydown="(e) => HandleEnter(e, stage)" 
+                                               style="width: 300px;" @onkeydown="(e) => HandleStageEnter(e, stage)" 
                                                @onclick:stopPropagation="true" />
                                         <button class="btn btn-sm btn-success" @onclick="() => SaveStage(stage)" @onclick:stopPropagation="true">✓</button>
                                         <button class="btn btn-sm btn-secondary" @onclick="CancelEditStage" @onclick:stopPropagation="true">✗</button>
@@ -233,7 +243,7 @@
                                                     @if (editingGroupId == group.Id)
                                                     {
                                                         <input type="text" class="form-control form-control-sm" @bind="editingGroupName" 
-                                                               style="width: 250px;" @onkeydown="(e) => HandleEnter(e, group)" 
+                                                               style="width: 250px;" @onkeydown="(e) => HandleGroupEnter(e, group)" 
                                                                @onclick:stopPropagation="true" />
                                                         <button class="btn btn-sm btn-success" @onclick="() => SaveGroup(group)" @onclick:stopPropagation="true">✓</button>
                                                         <button class="btn btn-sm btn-secondary" @onclick="CancelEditGroup" @onclick:stopPropagation="true">✗</button>
@@ -387,6 +397,13 @@
                         }
                     </div>
                 }
+                
+                <!-- Кнопка добавления нового этапа -->
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-primary btn-lg" @onclick="AddStage">
+                        <i class="bi bi-plus-circle me-2"></i>Добавить этап
+                    </button>
+                </div>
             }
         </div>
 
@@ -799,10 +816,27 @@
 
     private async Task AddStage()
     {
-        var newStage = new { EstimateId = Id, Name = $"Этап {stages.Count + 1}", OrderIndex = stages.Count, IsExpanded = true };
         try
         {
+            isSaving = true;
+            
+            // Определяем следующий порядковый номер
+            int nextOrderIndex = stages.Count;
+            
+            // Создаем новый этап
+            var newStage = new 
+            { 
+                EstimateId = Id, 
+                Name = $"Этап {stages.Count + 1}", 
+                Description = "",
+                OrderIndex = nextOrderIndex, 
+                IsExpanded = true 
+            };
+            
+            Console.WriteLine($"📝 Добавление нового этапа: {newStage.Name}");
+            
             var response = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateStages", newStage);
+            
             if (response.IsSuccessStatusCode)
             {
                 var created = await response.Content.ReadFromJsonAsync<EstimateStage>();
@@ -810,13 +844,27 @@
                 {
                     stages.Add(created);
                     stageExpandedState[created.Id] = true;
-                    StateHasChanged();
+                    
+                    // Уведомляем об изменении
+                    NotificationService.NotifyDataChanged();
+                    
+                    Console.WriteLine($"✅ Этап добавлен с ID: {created.Id}");
                 }
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Ошибка добавления этапа: {error}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка добавления этапа: {ex.Message}");
+            Console.WriteLine($"❌ Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
         }
     }
 
@@ -870,27 +918,14 @@
                 // Добавляем позицию в локальный список
                 items.Add(createdItem);
                 
-                // Обновляем группы если нужно
-                if (createdItem.GroupId.HasValue)
-                {
-                    var group = groups.FirstOrDefault(g => g.Id == createdItem.GroupId);
-                    if (group != null)
-                    {
-                        // Группа уже существует
-                    }
-                }
-                
                 // Обновляем состояние
                 StateHasChanged();
             }
             
             CloseAddDialog();
             
-            // Перезагружаем данные для синхронизации (опционально)
-            _ = Task.Run(async () => {
-                await Task.Delay(500); // Небольшая задержка
-                await LoadData();
-            });
+            // Уведомляем об изменении
+            NotificationService.NotifyDataChanged();
         }
     }
 
@@ -1044,6 +1079,9 @@
                 {
                     stage.Name = editingStageName;
                     Console.WriteLine($"✅ Этап переименован в: {editingStageName}");
+                    
+                    // Уведомляем об изменении
+                    NotificationService.NotifyDataChanged();
                 }
                 else
                 {
@@ -1074,6 +1112,14 @@
         StateHasChanged();
     }
 
+    private async Task HandleStageEnter(KeyboardEventArgs e, EstimateStage stage)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveStage(stage);
+        }
+    }
+
     private void EditGroup(EstimateItemGroup group)
     {
         editingGroupId = group.Id;
@@ -1089,6 +1135,9 @@
             group.Name = editingGroupName;
             var update = new { group.Id, name = editingGroupName, orderIndex = group.OrderIndex, stageId = group.StageId, isExpanded = group.IsExpanded };
             await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItemGroups/{group.Id}", update);
+            
+            // Уведомляем об изменении
+            NotificationService.NotifyDataChanged();
         }
         CancelEditGroup();
     }
@@ -1100,18 +1149,11 @@
         StateHasChanged();
     }
 
-    private async Task HandleEnter(KeyboardEventArgs e, object target)
+    private async Task HandleGroupEnter(KeyboardEventArgs e, EstimateItemGroup group)
     {
         if (e.Key == "Enter")
         {
-            if (target is EstimateStage stage)
-            {
-                await SaveStage(stage);
-            }
-            else if (target is EstimateItemGroup group)
-            {
-                await SaveGroup(group);
-            }
+            await SaveGroup(group);
         }
     }
 
@@ -1140,6 +1182,9 @@
         }
         await LoadData();
         selectedItems.Clear();
+        
+        // Уведомляем об изменении
+        NotificationService.NotifyDataChanged();
     }
 
     private void ShowMoveToGroup()
@@ -1205,6 +1250,9 @@
             await LoadData();
             selectedItems.Clear();
             CloseMoveModal();
+            
+            // Уведомляем об изменении
+            NotificationService.NotifyDataChanged();
         }
         catch (Exception ex)
         {
@@ -1266,6 +1314,9 @@
                     await LoadData();
                     selectedItems.Clear();
                     CloseMoveModal();
+                    
+                    // Уведомляем об изменении
+                    NotificationService.NotifyDataChanged();
                 }
             }
             else

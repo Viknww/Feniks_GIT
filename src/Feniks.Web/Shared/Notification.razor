@@ -1,0 +1,83 @@
+<div class="notification-container">
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="notification @GetNotificationClass()" role="alert">
+            <div class="notification-content">
+                <span class="notification-icon">@GetIcon()</span>
+                <span class="notification-message">@_message</span>
+                <button class="notification-close" @onclick="Close">×</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] private NotificationService? NotificationService { get; set; }
+    
+    private string _type = string.Empty;
+    private string _message = string.Empty;
+    private Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        if (NotificationService != null)
+        {
+            NotificationService.OnShow += (type, message) =>
+            {
+                _type = type;
+                _message = message;
+                StateHasChanged();
+                
+                _timer?.Dispose();
+                _timer = new Timer(_ =>
+                {
+                    _message = string.Empty;
+                    StateHasChanged();
+                }, null, 5000, Timeout.Infinite);
+            };
+            
+            NotificationService.OnHide += Close;
+        }
+    }
+
+    private string GetNotificationClass()
+    {
+        return _type switch
+        {
+            "success" => "notification-success",
+            "error" => "notification-error",
+            "warning" => "notification-warning",
+            "info" => "notification-info",
+            _ => ""
+        };
+    }
+
+    private string GetIcon()
+    {
+        return _type switch
+        {
+            "success" => "✓",
+            "error" => "✗",
+            "warning" => "⚠",
+            "info" => "ℹ",
+            _ => ""
+        };
+    }
+
+    private void Close()
+    {
+        _message = string.Empty;
+        _timer?.Dispose();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+        if (NotificationService != null)
+        {
+            NotificationService.OnShow -= (type, message) => { };
+            NotificationService.OnHide -= Close;
+        }
+    }
+}

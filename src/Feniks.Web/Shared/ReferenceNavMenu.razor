@@ -1,9 +1,11 @@
 @using Feniks.Shared.Models
 @using Feniks.Web.Services
+@using System.Linq
 @implements IDisposable
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
 
 <div class="sidebar-wrapper">
     <div class="sidebar-header">
@@ -139,6 +141,7 @@
         await LoadData();
         DetermineActiveItems();
         Navigation.LocationChanged += OnLocationChanged;
+        NotificationService.OnDataChanged += RefreshData;
     }
 
     protected override void OnParametersSet()
@@ -150,6 +153,12 @@
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         DetermineActiveItems();
+        StateHasChanged();
+    }
+
+    private async void RefreshData()
+    {
+        await LoadData();
         StateHasChanged();
     }
 
@@ -171,9 +180,9 @@
                 activeCatalogId = catalogId;
                 
                 var catalog = catalogs?.FirstOrDefault(c => c.Id == catalogId);
-                if (catalog != null)
+                if (catalog != null && catalog.CategoryId.HasValue)
                 {
-                    activeCategoryId = catalog.CategoryId;
+                    activeCategoryId = catalog.CategoryId.Value;
                     
                     if (!expandedCategories.Contains(activeCategoryId.Value))
                     {
@@ -199,12 +208,16 @@
     }
 
     private bool IsCategoryActive(int categoryId) => activeCategoryId == categoryId;
+    
     private bool IsCatalogActive(int catalogId) => activeCatalogId == catalogId;
 
     private bool HasActiveCatalog(int categoryId)
     {
-        return activeCatalogId != null && 
-               catalogs?.FirstOrDefault(c => c.Id == activeCatalogId)?.CategoryId == categoryId;
+        if (activeCatalogId == null || catalogs == null)
+            return false;
+            
+        var catalog = catalogs.FirstOrDefault(c => c.Id == activeCatalogId);
+        return catalog != null && catalog.CategoryId == categoryId;
     }
 
     private async Task LoadExpandedState()
@@ -244,6 +257,7 @@
     public void Dispose()
     {
         Navigation.LocationChanged -= OnLocationChanged;
+        NotificationService.OnDataChanged -= RefreshData;
     }
 
     private async Task LoadData()
@@ -379,19 +393,19 @@
     }
 
     private void GoToCatalog(int catalogId)
-{
-    // Находим категорию справочника
-    var catalog = catalogs?.FirstOrDefault(c => c.Id == catalogId);
-    if (catalog?.CategoryId != null)
     {
-        if (!expandedCategories.Contains(catalog.CategoryId.Value))
+        // Находим категорию справочника
+        var catalog = catalogs?.FirstOrDefault(c => c.Id == catalogId);
+        if (catalog?.CategoryId != null)
         {
-            expandedCategories.Add(catalog.CategoryId.Value);
-            _ = SaveExpandedState();
+            if (!expandedCategories.Contains(catalog.CategoryId.Value))
+            {
+                expandedCategories.Add(catalog.CategoryId.Value);
+                _ = SaveExpandedState();
+            }
         }
+        Navigation.NavigateTo($"/reference/{catalogId}");
     }
-    Navigation.NavigateTo($"/reference/{catalogId}");
-}
 
     private void GoToNewCatalog(int categoryId)
     {

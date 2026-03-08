@@ -85,6 +85,9 @@
     </div>
 </div>
 
+<!-- Компонент уведомлений добавлен сюда -->
+<Notification />
+
 <style>
     .app-wrapper { display: flex; min-height: 100vh; }
     .sidebar { width: 280px; background: linear-gradient(180deg, #1a1f2b 0%, #141824 100%); color: white; position: fixed; height: 100vh; overflow-y: auto; }
@@ -106,17 +109,13 @@
     .btn-group .btn-primary { background-color: #0d6efd; border-color: #0d6efd; }
     .btn-group .btn-outline-secondary { border-color: #6c757d; color: #6c757d; }
     .btn-group .btn-outline-secondary:hover { background-color: #6c757d; color: white; }
-    
-  
 </style>
 
 @code {
-    
     private bool isTopMenuOpen = false;
     private string activeMenu = "objects";
 
     private void ToggleTopMenu() => isTopMenuOpen = !isTopMenuOpen;
     private void SetActiveMenuObjects() { activeMenu = "objects"; StateHasChanged(); }
     private void SetActiveMenuReferences() { activeMenu = "references"; StateHasChanged(); }
-    
 }

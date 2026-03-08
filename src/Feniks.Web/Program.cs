@@ -13,7 +13,10 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://
 builder.Services.AddScoped<ObjectsService>();
 builder.Services.AddScoped<ReferenceCategoryService>();
 builder.Services.AddScoped<RefCatalogService>();
-builder.Services.AddScoped<ReferenceService>(); // Добавлено
+builder.Services.AddScoped<ReferenceService>();
 builder.Services.AddScoped<ReferenceItemService>();
+
+// Добавляем недостающий сервис
+builder.Services.AddScoped<NotificationService>();
 
 await builder.Build().RunAsync();

@@ -1,0 +1,122 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+
+<div class="app-wrapper">
+    <div class="sidebar">
+        @if (activeMenu == "objects")
+        {
+            <NavMenu />
+        }
+        else
+        {
+            <ReferenceNavMenu />
+        }
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="d-flex justify-content-between align-items-center px-4 py-2">
+                <div class="d-flex align-items-center">
+                    <span class="hamburger-icon me-3" @onclick="ToggleTopMenu">
+                        <i class="bi bi-list fs-4"></i>
+                    </span>
+                    
+                    <!-- Кнопки переключения между меню -->
+                    <div class="btn-group me-3">
+                        <button class="btn btn-sm @(activeMenu == "objects" ? "btn-primary" : "btn-outline-secondary")"
+                                @onclick="SetActiveMenuObjects">
+                            <i class="bi bi-building"></i> Объекты
+                        </button>
+                        <button class="btn btn-sm @(activeMenu == "references" ? "btn-primary" : "btn-outline-secondary")"
+                                @onclick="SetActiveMenuReferences">
+                            <i class="bi bi-book"></i> Справочники
+                        </button>
+                    </div>
+
+                    <span class="me-3 text-muted">
+                        <i class="bi bi-calendar me-1"></i> @DateTime.Now.ToString("dd.MM.yyyy")
+                    </span>
+                    <span class="online-status">
+                        <span class="status-dot bg-success"></span> Онлайн
+                    </span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="me-3"> Виктор</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Выпадающее верхнее меню -->
+        @if (isTopMenuOpen)
+        {
+            <div class="top-dropdown-menu bg-white shadow-lg border-bottom">
+                <div class="container-fluid py-3">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <h6 class="dropdown-header">ОСНОВНОЕ</h6>
+                            <NavLink class="dropdown-item d-block py-2" href="/objects">📋 Объекты</NavLink>
+                            <NavLink class="dropdown-item d-block py-2" href="/finance">💰 Финансы</NavLink>
+                            <NavLink class="dropdown-item d-block py-2" href="/payments">💳 Платежи</NavLink>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <h6 class="dropdown-header">ЗАКУПКИ И РАБОТЫ</h6>
+                            <NavLink class="dropdown-item d-block py-2" href="/purchases">📦 Закупки</NavLink>
+                            <NavLink class="dropdown-item d-block py-2" href="/work">🔧 Работа</NavLink>
+                            <NavLink class="dropdown-item d-block py-2" href="/execution">📊 Выполнение</NavLink>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <h6 class="dropdown-header">КОНТРАГЕНТЫ</h6>
+                            <NavLink class="dropdown-item d-block py-2" href="/contractors">👥 Контрагенты</NavLink>
+                            <NavLink class="dropdown-item d-block py-2" href="/company">🏢 Компания</NavLink>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <h6 class="dropdown-header">СИСТЕМА</h6>
+                            <NavLink class="dropdown-item d-block py-2" href="/settings">⚙️ Настройки</NavLink>
+                            <NavLink class="dropdown-item d-block py-2" href="/help">❓ Помощь</NavLink>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="content-wrapper p-4">
+            @Body
+        </div>
+    </div>
+</div>
+
+<style>
+    .app-wrapper { display: flex; min-height: 100vh; }
+    .sidebar { width: 280px; background: linear-gradient(180deg, #1a1f2b 0%, #141824 100%); color: white; position: fixed; height: 100vh; overflow-y: auto; }
+    .main-content { flex: 1; margin-left: 280px; background-color: #f5f7fa; min-height: 100vh; }
+    .top-bar { height: 60px; background: white; border-bottom: 1px solid #dee2e6; }
+    .hamburger-icon { color: #6c757d; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; }
+    .hamburger-icon:hover { background-color: #e9ecef; color: #0d6efd; }
+    .online-status { font-size: 0.875rem; color: #6c757d; }
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background-color: #28a745; }
+    .content-wrapper { min-height: calc(100vh - 150px); padding-top: 1rem; }
+    
+    .top-dropdown-menu { position: relative; z-index: 1000; border-radius: 0 0 8px 8px; }
+    .dropdown-header { font-size: 0.8rem; font-weight: 600; color: #6c757d; letter-spacing: 0.5px; padding-left: 0; margin-bottom: 0.5rem; }
+    .dropdown-item { color: #495057; text-decoration: none; transition: all 0.2s ease; border-radius: 4px; padding: 0.5rem 0.75rem; margin: 2px 0; display: block; }
+    .dropdown-item:hover { background-color: #f8f9fa; color: #0d6efd; padding-left: 1rem; }
+    .dropdown-item.active { background-color: #e7f1ff; color: #0d6efd; font-weight: 500; border-left: 3px solid #0d6efd; }
+    
+    .btn-group .btn-sm { padding: 0.25rem 0.75rem; font-size: 0.875rem; }
+    .btn-group .btn-primary { background-color: #0d6efd; border-color: #0d6efd; }
+    .btn-group .btn-outline-secondary { border-color: #6c757d; color: #6c757d; }
+    .btn-group .btn-outline-secondary:hover { background-color: #6c757d; color: white; }
+    
+  
+</style>
+
+@code {
+    
+    private bool isTopMenuOpen = false;
+    private string activeMenu = "objects";
+
+    private void ToggleTopMenu() => isTopMenuOpen = !isTopMenuOpen;
+    private void SetActiveMenuObjects() { activeMenu = "objects"; StateHasChanged(); }
+    private void SetActiveMenuReferences() { activeMenu = "references"; StateHasChanged(); }
+    
+}

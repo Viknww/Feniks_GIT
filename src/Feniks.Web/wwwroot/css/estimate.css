@@ -1,0 +1,813 @@
+﻿@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+/* Подключение Bootstrap Icons */
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+/* ========================================
+   Стили для страницы сметы (Estimate.razor)
+   ======================================== */
+
+/* Стили для кнопок сворачивания */
+.btn-collapse {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #495057;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.btn-collapse i {
+    font-size: 1.2rem;
+}
+
+.btn-collapse:hover {
+    color: #0d6efd;
+}
+
+.estimate-page {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+}
+
+.breadcrumbs {
+    font-size: 14px;
+}
+
+.breadcrumbs a {
+    color: #6c757d;
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    color: #0d6efd;
+}
+
+.stage-card {
+    border-left: 3px solid #0d6efd;
+    
+}
+
+.group-card {
+    border-left: 3px solid #6c757d;
+}
+
+.table th {
+    font-size: 0.8rem;
+    white-space: nowrap;
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.table-primary {
+    background-color: #cfe2ff !important;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+}
+
+.position-sticky-bottom {
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    box-shadow: 0 -4px 6px rgba(0,0,0,0.05);
+}
+
+.form-control-sm, .form-select-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+}
+
+/* Стили для левого меню */
+.sidebar-wrapper {
+    height: 100vh;
+    background: linear-gradient(180deg, #1a1f2b 0%, #141824 100%);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-header {
+    padding: 1.5rem 1rem 1rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.logo h5 {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.search-box {
+    position: relative;
+    margin-top: 1rem;
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.search-box input {
+    background-color: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    padding-left: 30px;
+    border-radius: 8px;
+}
+
+.search-box input:focus {
+    background-color: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.2);
+    box-shadow: none;
+    color: white;
+}
+
+.search-box input::placeholder {
+    color: #6c757d;
+}
+
+.sidebar-content {
+    padding: 1rem 0.75rem;
+}
+
+.menu-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 0 0.5rem;
+}
+
+.tree-view {
+    font-size: 0.9rem;
+}
+
+.tree-item {
+    margin-bottom: 0.25rem;
+}
+
+.tree-item-header {
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tree-item-header:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.tree-children {
+    margin-top: 0.25rem;
+    border-left: 1px dashed rgba(255,255,255,0.2);
+    padding-left: 0.5rem;
+}
+
+.tree-child-item {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.tree-child-item:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+
+.tree-child-item .nav-link {
+    color: rgba(255,255,255,0.6) !important;
+    padding: 0;
+}
+
+.tree-child-item .nav-link:hover {
+    color: white !important;
+}
+
+.toggle-icon {
+    color: #6c757d;
+    font-size: 0.7rem;
+}
+
+.object-icon {
+    font-size: 1rem;
+}
+
+.child-icon {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.menu-link {
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    transition: all 0.2s;
+    margin-bottom: 0.25rem;
+    padding: 0.4rem 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.menu-link:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
+.menu-link.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Стили для скроллбара */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Стили для бейджей нумерации */
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    color: white;
+}
+
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    color: white;
+}
+
+/* Стили для номеров позиций в таблице */
+.table td:first-child + td {
+    font-weight: 500;
+    color: #495057;
+}
+
+
+
+/* Стили для кнопок сворачивания */
+.btn-collapse {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #495057;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.btn-collapse i {
+    font-size: 1.2rem;
+}
+
+.btn-collapse:hover {
+    color: #0d6efd;
+}
+
+/* Стили для страницы сметы */
+.estimate-page {
+    padding: 1rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Хлебные крошки */
+.breadcrumbs {
+    font-size: 0.9rem;
+}
+
+.breadcrumbs a {
+    color: #6c757d;
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    color: #0d6efd;
+    text-decoration: underline;
+}
+
+/* Заголовок сметы 
+.estimate-header {
+    border-left: 4px solid #0d6efd;
+}*/
+
+/* Карточки стоимости */
+.card {
+    border: none;
+    transition: all 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Этапы и группы */
+.stage-card .card-header {
+    cursor: pointer;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.stage-card .card-header:hover {
+    background-color: #e9ecef;
+}
+
+.group-card .card-header {
+    cursor: pointer;
+    background-color: rgba(0,0,0,0.03);
+}
+
+.group-card .card-header:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+/* Таблицы */
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    background-color: #f8f9fa;
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Поля ввода в таблице */
+.table input[type="text"],
+.table input[type="number"],
+.table select {
+    width: 100%;
+    min-width: 80px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+.table input[type="text"]:focus,
+.table input[type="number"]:focus,
+.table select:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Стили для выпадающего списка типов */
+select.form-select-sm {
+    padding: 0.25rem 1.5rem 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 0.2rem;
+    background-position: right 0.25rem center;
+    min-width: 90px;
+}
+
+/* Подсветка типа */
+option[value="P"] { background-color: #e3f2fd; }
+option[value="M"] { background-color: #e8f5e8; }
+option[value="X"] { background-color: #fff3e0; }
+option[value="D"] { background-color: #f3e5f5; }
+
+/* Чекбоксы */
+.table input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    cursor: pointer;
+}
+
+/* Выделение выбранной строки */
+.table-primary {
+    background-color: #cfe2ff !important;
+}
+
+/* Бейджи */
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+
+/* Модальные окна */
+.modal {
+    z-index: 1050;
+}
+
+.modal-backdrop {
+    z-index: 1040;
+}
+
+/* Нижний колонтитул с выбранными позициями */
+.position-sticky-bottom {
+    position: sticky;
+    bottom: 1rem;
+    z-index: 1020;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .estimate-page {
+        padding: 0.5rem;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* Цветовая индикация типов позиций - исправленная версия */
+/* table tbody tr[data-type="P"] {
+    border-left: 4px solid #0d6efd !important;
+}
+
+table tbody tr[data-type="M"] {
+    border-left: 4px solid #198754 !important;
+}
+
+table tbody tr[data-type="X"] {
+    border-left: 4px solid #ffc107 !important;
+}
+
+table tbody tr[data-type="D"] {
+    border-left: 4px solid #6c757d !important;
+} */
+
+/* Для выделенных строк */
+table tbody tr.table-primary {
+    border-left-width: 6px !important;
+    background-color: #cfe2ff !important;
+}
+
+/* Убедимся, что полоска видна */
+table tbody tr td:first-child {
+    position: relative;
+}
+
+/* table tbody tr[data-type="P"] td:first-child::before,
+table tbody tr[data-type="M"] td:first-child::before,
+table tbody tr[data-type="X"] td:first-child::before,
+table tbody tr[data-type="D"] td:first-child::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+}
+
+table tbody tr[data-type="P"] td:first-child::before {
+    background-color: #0d6efd;
+}
+
+table tbody tr[data-type="M"] td:first-child::before {
+    background-color: #198754;
+}
+
+table tbody tr[data-type="X"] td:first-child::before {
+    background-color: #ffc107;
+}
+
+table tbody tr[data-type="D"] td:first-child::before {
+    background-color: #6c757d;
+} */
+
+/* ===== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ УМЕНЬШЕНИЯ ТАБЛИЦЫ ===== */
+
+/* Уменьшение шрифта в заголовках таблицы */
+.table th {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.3rem;
+    white-space: nowrap;
+}
+
+/* Уменьшение поля типа */
+.table td select.form-select-sm,
+.table td .form-select-sm {
+    min-width: 60px;
+    width: 70px;
+    padding: 0.2rem 0.2rem 0.2rem 0.3rem;
+    font-size: 0.75rem;
+    background-position: right 0.2rem center;
+    background-size: 12px;
+}
+
+/* Для текста в ячейках таблицы */
+.table td {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.3rem;
+}
+
+/* Для полей ввода */
+.table input.form-control-sm {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.3rem;
+    height: auto;
+}
+
+/* Для чекбоксов */
+.table input[type="checkbox"] {
+    width: 0.9rem;
+    height: 0.9rem;
+    margin: 0;
+}
+
+/* Для кнопок в таблице */
+.table .btn-sm {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.7rem;
+}
+
+/* Для бейджей с суммами */
+.table .badge {
+    font-size: 0.7rem;
+    padding: 0.3em 0.5em;
+}
+
+/* ===== ЦВЕТОВАЯ ИНДИКАЦИЯ ТИПОВ ПОЗИЦИЙ ===== */
+
+/* 1. Цветная полоска слева от строки (САМОЕ ГЛАВНОЕ) - ОТКЛЮЧЕНО */
+/*
+tr[data-type="P"] td:first-child {
+    border-left: 4px solid #0d6efd;
+}
+
+tr[data-type="M"] td:first-child {
+    border-left: 4px solid #198754;
+}
+
+tr[data-type="X"] td:first-child {
+    border-left: 4px solid #ffc107;
+}
+
+tr[data-type="D"] td:first-child {
+    border-left: 4px solid #6c757d;
+}
+*/
+
+/* 2. Утолщение границы для выбранных строк */
+tr.table-primary td:first-child {
+    border-left-width: 6px !important;
+}
+
+/* 3. Цветной фон для выпадающего списка */
+select.form-select-sm {
+    transition: all 0.2s ease;
+}
+
+/* Работы (P) - синий */
+select.form-select-sm[data-type="P"],
+select.form-select-sm:has(option[value="P"]:checked) {
+    background-color: #e3f2fd;
+    border-color: #0d6efd;
+}
+
+/* Материалы (M) - зеленый */
+select.form-select-sm[data-type="M"],
+select.form-select-sm:has(option[value="M"]:checked) {
+    background-color: #e8f5e8;
+    border-color: #198754;
+}
+
+/* Механизмы (X) - оранжевый */
+select.form-select-sm[data-type="X"],
+select.form-select-sm:has(option[value="X"]:checked) {
+    background-color: #fff3e0;
+    border-color: #ffc107;
+}
+
+/* Доставка (D) - фиолетовый */
+select.form-select-sm[data-type="D"],
+select.form-select-sm:has(option[value="D"]:checked) {
+    background-color: #f3e5f5;
+    border-color: #6c757d;
+}
+
+/* 4. Цветные опции в выпадающем списке */
+select.form-select-sm option[value="P"] {
+    background-color: #e3f2fd;
+}
+
+select.form-select-sm option[value="M"] {
+    background-color: #e8f5e8;
+}
+
+select.form-select-sm option[value="X"] {
+    background-color: #fff3e0;
+}
+
+select.form-select-sm option[value="D"] {
+    background-color: #f3e5f5;
+}
+
+/* 5. Эффект при наведении */
+select.form-select-sm:hover {
+    filter: brightness(0.95);
+    cursor: pointer;
+}
+
+/* 6. Легенда цветов (можно разместить где угодно) */
+.color-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    border: 1px solid #dee2e6;
+}
+
+.color-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.color-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.color-dot.work { background-color: #0d6efd; }
+.color-dot.material { background-color: #198754; }
+.color-dot.machinery { background-color: #ffc107; }
+.color-dot.delivery { background-color: #6c757d; }
+
+/* ===== УЗКОЕ ПОЛЕ ТИПА ===== */
+
+/* Делаем поле типа очень узким */
+select.type-field {
+    width: 55px !important;
+    min-width: 55px !important;
+    max-width: 55px !important;
+    padding: 0.2rem 0rem 0.2rem 0.3rem !important;
+    text-align: left;
+    font-size: 0.8rem;
+    background-position: right 0.1rem center !important;
+    background-size: 12px !important;
+    -moz-appearance: none; /* Убирает стандартную стрелку в Firefox */
+    -webkit-appearance: none; /* Убирает стандартную стрелку в WebKit */
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.3rem center;
+    background-size: 12px 12px;
+    padding-right: 1.2rem !important;
+}
+
+/* Убираем лишние отступы у соседних ячеек */
+td:has(select.type-field) {
+    padding: 0.2rem 0.1rem !important;
+}
+
+/* Для заголовка таблицы */
+th:contains("Тип") {
+    width: 60px !important;
+}
+
+/* Альтернативный вариант для заголовка через nth-child */
+.table th:nth-child(3) {
+    width: 60px !important;
+}
+
+/* Экстремально узкое поле */
+select.type-field {
+    width: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
+    padding: 0.2rem 0rem 0.2rem 0.3rem !important;
+    font-size: 0.8rem;
+    background-position: right 0.1rem center !important;
+    background-size: 10px !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M2 4l4 4 4-4'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.2rem center !important;
+    padding-right: 1rem !important;
+}
+
+/* Убираем текстовые подписи в опциях (оставляем только букву) */
+select.type-field option {
+    font-size: 0.8rem;
+    padding: 0.1rem;
+}
+
+/* Если хотите скрыть текст в опциях - но лучше не надо */
+/* select.type-field option {
+    text-indent: -9999px;
+} */
+
+/* ===== ПРИНУДИТЕЛЬНОЕ ОТКЛЮЧЕНИЕ ЦВЕТНЫХ ПОЛОСОК ===== */
+tr[data-type="P"] td:first-child,
+tr[data-type="M"] td:first-child,
+tr[data-type="X"] td:first-child,
+tr[data-type="D"] td:first-child,
+tr.table-primary td:first-child {
+    border-left: none !important;
+    border-left-width: 0 !important;
+}
+
+/* Стили для отображения прибыли */
+.badge.bg-success.bg-opacity-25 {
+    background-color: rgba(25, 135, 84, 0.25) !important;
+    border: 1px solid rgba(25, 135, 84, 0.3);
+}
+
+.badge.bg-danger.bg-opacity-25 {
+    background-color: rgba(220, 53, 69, 0.25) !important;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.badge.text-success {
+    color: #198754 !important;
+}
+
+.badge.text-danger {
+    color: #dc3545 !important;
+}
+
+/* Анимация при наведении */
+.badge.bg-success.bg-opacity-25:hover,
+.badge.bg-danger.bg-opacity-25:hover {
+    filter: brightness(0.95);
+    cursor: help;
+}
+/* ===== СТИЛИ ДЛЯ АКТИВНОГО ПУНКТА МЕНЮ ===== */
+.tree-child-item.active-estimate {
+    background-color: rgba(13, 110, 253, 0.2);
+    border-radius: 4px;
+    color: white !important;
+}
+
+.tree-child-item.active-estimate .text-white-50 {
+    color: white !important;
+}
+
+.tree-child-item.active-estimate .bi-dot {
+    color: #0d6efd !important;
+}
+
+/* Активный пункт меню (смета) */
+.tree-child-item.active-estimate {
+    background-color: rgba(13, 110, 253, 0.2);
+    border-radius: 4px;
+}
+
+.tree-child-item.active-estimate .text-white-50 {
+    color: white !important;
+}
+
+.tree-child-item.active-estimate .bi-dot {
+    color: #0d6efd !important;
+}
+
+/* Курсоры для кликабельных элементов */
+.tree-item-header span {
+    cursor: pointer;
+}
+
+.tree-item-header .badge {
+    cursor: pointer;
+}

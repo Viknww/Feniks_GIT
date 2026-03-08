@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Feniks.API/Feniks.API.csproj" />
+    <Project Path="src/Feniks.Shared/Feniks.Shared.csproj" />
+    <Project Path="src/Feniks.Web/Feniks.Web.csproj" />
+  </Folder>
+</Solution>

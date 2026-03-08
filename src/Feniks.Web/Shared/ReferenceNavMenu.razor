@@ -1,0 +1,405 @@
+@using Feniks.Shared.Models
+@using Feniks.Web.Services
+@implements IDisposable
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="sidebar-wrapper">
+    <div class="sidebar-header">
+        <div class="logo d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-book fs-4 text-primary"></i>
+            <h5 class="mb-0 text-white">СПРАВОЧНИКИ</h5>
+        </div>
+
+        <!-- Строка поиска и кнопки -->
+        <div class="d-flex gap-2 mb-3">
+            <div class="search-box flex-grow-1 position-relative">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="form-control form-control-sm" 
+                       placeholder="Поиск в справочниках..." 
+                       @bind="searchTerm" 
+                       @oninput="OnSearchInput" />
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" title="Сортировка по алфавиту" @onclick="SortCategories">
+                <i class="bi bi-sort-alpha-down"></i>
+            </button>
+            <button class="btn btn-outline-primary btn-sm" title="Добавить новую категорию" @onclick="GoToNewCategory">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="sidebar-content">
+        <div class="menu-section">
+            @if (isLoading)
+            {
+                <div class="text-white-50 text-center py-4">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Загрузка...
+                </div>
+            }
+            else if (filteredCategories == null || !filteredCategories.Any())
+            {
+                <div class="text-white-50 text-center py-4">
+                    <i class="bi bi-book fs-4 d-block mb-2"></i>
+                    @(string.IsNullOrEmpty(searchTerm) ? "Нет справочников" : "Ничего не найдено")
+                </div>
+            }
+            else
+            {
+                <!-- Дерево категорий и справочников -->
+                <div class="tree-view">
+                    @foreach (var category in filteredCategories)
+                    {
+                        var isCategoryActive = IsCategoryActive(category.Id);
+                        var hasActiveCatalog = HasActiveCatalog(category.Id);
+                        var categoryClass = isCategoryActive ? "active-object" : (hasActiveCatalog ? "parent-of-active" : "");
+                        
+                        <div class="tree-item @categoryClass">
+                            <!-- Заголовок категории -->
+                            <div class="tree-item-header d-flex align-items-center gap-2">
+                                <span class="toggle-icon" @onclick="() => ToggleCategory(category.Id)" style="cursor: pointer;">
+                                    <i class="bi @(expandedCategories.Contains(category.Id) ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                                </span>
+                                
+                                <span class="object-icon" @onclick="() => ToggleCategory(category.Id)" style="cursor: pointer;">
+                                    <i class="bi bi-folder"></i>
+                                </span>
+                                
+                                <span class="flex-grow-1 @(isCategoryActive || hasActiveCatalog ? "text-white fw-bold" : "text-white-50")" 
+                                      @onclick="() => GoToCategory(category.Id)" 
+                                      style="cursor: pointer;">
+                                    @category.Name
+                                </span>
+                                
+                                <span class="badge @(GetCatalogsCount(category.Id) > 0 ? "bg-info" : "bg-secondary")" 
+                                      style="font-size: 10px; cursor: pointer;"
+                                      @onclick="() => ToggleCategory(category.Id)">
+                                    @GetCatalogsCount(category.Id)
+                                </span>
+                            </div>
+
+                            @if (expandedCategories.Contains(category.Id))
+                            {
+                                <div class="tree-children">
+                                    @if (catalogs != null && catalogs.Any(c => c.CategoryId == category.Id))
+                                    {
+                                        @foreach (var catalog in catalogs.Where(c => c.CategoryId == category.Id).OrderBy(c => c.Name))
+                                        {
+                                            var isActive = IsCatalogActive(catalog.Id);
+                                            var activeClass = isActive ? "active-estimate" : "";
+                                            
+                                            <div class="tree-child-item d-flex align-items-center gap-2 py-1 @activeClass"
+                                                 @onclick="() => GoToCatalog(catalog.Id)"
+                                                 style="cursor: pointer;">
+                                                <i class="bi bi-folder2-open child-icon"></i>
+                                                <span class="@(isActive ? "text-white fw-bold" : "text-white-50") small flex-grow-1">@catalog.Name</span>
+                                                @if (isActive)
+                                                {
+                                                    <i class="bi bi-check-circle-fill small me-1" style="color: #f1c40f !important;"></i>
+                                                }
+                                            </div>
+                                        }
+                                    }
+
+                                    <div class="tree-child-item d-flex align-items-center gap-2 py-1 text-primary"
+                                         @onclick="() => GoToNewCatalog(category.Id)"
+                                         style="cursor: pointer;">
+                                        <i class="bi bi-plus-circle"></i>
+                                        <span class="small">Добавить справочник</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<ReferenceCategory>? categories;
+    private List<ReferenceCategory>? filteredCategories;
+    private List<RefCatalog>? catalogs;
+    private List<ReferenceItem>? allItems;
+    private HashSet<int> expandedCategories = new();
+    private string searchTerm = string.Empty;
+    private bool sortAscending = true;
+    private const string StorageKey = "expandedReferenceCategories";
+    
+    private int? activeCategoryId;
+    private int? activeCatalogId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExpandedState();
+        await LoadData();
+        DetermineActiveItems();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        DetermineActiveItems();
+        StateHasChanged();
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        DetermineActiveItems();
+        StateHasChanged();
+    }
+
+    private void DetermineActiveItems()
+    {
+        var uri = Navigation.Uri.ToLower();
+        
+        var oldActiveCategoryId = activeCategoryId;
+        var oldActiveCatalogId = activeCatalogId;
+        
+        activeCategoryId = null;
+        activeCatalogId = null;
+        
+        if (uri.Contains("/reference/") && !uri.Contains("/new/") && !uri.Contains("/edit"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(uri, @"/reference/(\d+)");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var catalogId))
+            {
+                activeCatalogId = catalogId;
+                
+                var catalog = catalogs?.FirstOrDefault(c => c.Id == catalogId);
+                if (catalog != null)
+                {
+                    activeCategoryId = catalog.CategoryId;
+                    
+                    if (!expandedCategories.Contains(activeCategoryId.Value))
+                    {
+                        expandedCategories.Add(activeCategoryId.Value);
+                        _ = SaveExpandedState();
+                    }
+                }
+            }
+        }
+        else if (uri.Contains("/reference-category/") && !uri.Contains("/edit") && !uri.Contains("/new"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(uri, @"/reference-category/(\d+)");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var categoryId))
+            {
+                activeCategoryId = categoryId;
+            }
+        }
+        
+        if (oldActiveCategoryId != activeCategoryId || oldActiveCatalogId != activeCatalogId)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private bool IsCategoryActive(int categoryId) => activeCategoryId == categoryId;
+    private bool IsCatalogActive(int catalogId) => activeCatalogId == catalogId;
+
+    private bool HasActiveCatalog(int categoryId)
+    {
+        return activeCatalogId != null && 
+               catalogs?.FirstOrDefault(c => c.Id == activeCatalogId)?.CategoryId == categoryId;
+    }
+
+    private async Task LoadExpandedState()
+    {
+        try
+        {
+            var saved = await JSRuntime.InvokeAsync<string>("localStorage.getItem", StorageKey);
+            if (!string.IsNullOrEmpty(saved))
+            {
+                var ids = System.Text.Json.JsonSerializer.Deserialize<List<int>>(saved);
+                if (ids != null)
+                {
+                    expandedCategories = new HashSet<int>(ids);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки состояния: {ex.Message}");
+        }
+    }
+
+    private async Task SaveExpandedState()
+    {
+        try
+        {
+            var ids = expandedCategories.ToList();
+            var json = System.Text.Json.JsonSerializer.Serialize(ids);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка сохранения состояния: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            
+            categories = await Http.GetFromJsonAsync<List<ReferenceCategory>>("http://localhost:5050/api/ReferenceCategories");
+            
+            var allCatalogs = await Http.GetFromJsonAsync<List<RefCatalog>>("http://localhost:5050/api/RefCatalogs");
+            
+            if (categories != null && allCatalogs != null)
+            {
+                catalogs = allCatalogs;
+                
+                // Загружаем все позиции для подсчета
+                allItems = await Http.GetFromJsonAsync<List<ReferenceItem>>("http://localhost:5050/api/ReferenceItems") ?? new();
+            }
+            
+            FilterCategories();
+            DetermineActiveItems();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private int GetCatalogsCount(int categoryId)
+    {
+        return catalogs?.Count(c => c.CategoryId == categoryId) ?? 0;
+    }
+
+    private int GetItemsCount(int catalogId)
+    {
+        return allItems?.Count(i => i.ReferenceId == catalogId) ?? 0;
+    }
+
+    private async void ToggleCategory(int categoryId)
+    {
+        if (expandedCategories.Contains(categoryId))
+        {
+            expandedCategories.Remove(categoryId);
+        }
+        else
+        {
+            expandedCategories.Add(categoryId);
+        }
+        await SaveExpandedState();
+        StateHasChanged();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        FilterCategories();
+    }
+
+    private void FilterCategories()
+    {
+        if (categories == null)
+        {
+            filteredCategories = null;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredCategories = categories.ToList();
+        }
+        else
+        {
+            filteredCategories = categories
+                .Where(c => 
+                    c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (catalogs != null && catalogs.Any(cat => 
+                        cat.CategoryId == c.Id && cat.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+                )
+                .ToList();
+        }
+
+        // Применяем сортировку
+        if (sortAscending)
+        {
+            filteredCategories = filteredCategories.OrderBy(c => c.Name).ToList();
+        }
+        else
+        {
+            filteredCategories = filteredCategories.OrderByDescending(c => c.Name).ToList();
+        }
+
+        StateHasChanged();
+    }
+
+    private void SortCategories()
+    {
+        if (filteredCategories != null)
+        {
+            sortAscending = !sortAscending;
+            
+            if (sortAscending)
+            {
+                filteredCategories = filteredCategories.OrderBy(c => c.Name).ToList();
+            }
+            else
+            {
+                filteredCategories = filteredCategories.OrderByDescending(c => c.Name).ToList();
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void GoToNewCategory()
+    {
+        Navigation.NavigateTo("/reference-category/new", true);
+    }
+
+    private void GoToCategory(int categoryId)
+    {
+        if (!expandedCategories.Contains(categoryId))
+        {
+            expandedCategories.Add(categoryId);
+            _ = SaveExpandedState();
+        }
+        Navigation.NavigateTo($"/reference-category/{categoryId}");
+    }
+
+    private void GoToCatalog(int catalogId)
+{
+    // Находим категорию справочника
+    var catalog = catalogs?.FirstOrDefault(c => c.Id == catalogId);
+    if (catalog?.CategoryId != null)
+    {
+        if (!expandedCategories.Contains(catalog.CategoryId.Value))
+        {
+            expandedCategories.Add(catalog.CategoryId.Value);
+            _ = SaveExpandedState();
+        }
+    }
+    Navigation.NavigateTo($"/reference/{catalogId}");
+}
+
+    private void GoToNewCatalog(int categoryId)
+    {
+        if (!expandedCategories.Contains(categoryId))
+        {
+            expandedCategories.Add(categoryId);
+            _ = SaveExpandedState();
+        }
+        Navigation.NavigateTo($"/reference/new/{categoryId}", true);
+    }
+}

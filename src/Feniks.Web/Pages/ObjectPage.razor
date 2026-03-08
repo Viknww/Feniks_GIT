@@ -1,0 +1,176 @@
+@page "/object/{id:int}"
+@using Feniks.Web.Models
+@using WebEstimate = Feniks.Web.Models.Estimate
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="container py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3">Загрузка объекта...</p>
+        </div>
+    }
+    else if (obj == null)
+    {
+        <div class="alert alert-danger">Объект не найден</div>
+    }
+    else
+    {
+        <!-- Заголовок объекта -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h2>@obj.Name</h2>
+                <div class="d-flex gap-3 text-muted">
+                    <span><i class="bi bi-person me-1"></i>@obj.Customer</span>
+                    <span><i class="bi bi-geo-alt me-1"></i>@obj.Address</span>
+                    <span class="badge @GetStatusBadge(obj.Status)">@obj.Status</span>
+                </div>
+            </div>
+            <button class="btn btn-outline-primary" @onclick="EditObject">
+                <i class="bi bi-pencil me-1"></i>Редактировать
+            </button>
+        </div>
+
+        <!-- Финансовые показатели -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Бюджет объекта</h6>
+                        <h3 class="mb-0">@obj.Budget.ToString("N0") ₽</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Всего смет</h6>
+                        <h3 class="mb-0">@(estimates?.Count ?? 0)</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Общая стоимость</h6>
+                        <h3 class="mb-0">@totalCost.ToString("N0") ₽</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список смет объекта -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Сметы объекта</h5>
+                <button class="btn btn-primary btn-sm" @onclick="AddNewEstimate">
+                    <i class="bi bi-plus-circle me-1"></i>Новая смета
+                </button>
+            </div>
+            <div class="card-body">
+                @if (estimates == null || !estimates.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-file-earmark-text fs-1 d-block mb-3"></i>
+                        <p>У объекта нет смет</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Название сметы</th>
+                                    <th>Статус</th>
+                                    <th>Стоимость</th>
+                                    <th>Дата создания</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var est in estimates)
+                                {
+                                    <tr style="cursor: pointer;" @onclick="() => GoToEstimate(est.Id)">
+                                        <td class="fw-bold">@est.Name</td>
+                                        <td><span class="badge @GetStatusBadge(est.Status)">@est.Status</span></td>
+                                        <td>@est.TotalCost.ToString("N0") ₽</td>
+                                        <td>@est.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool isLoading = true;
+    private ConstructionObject? obj;
+    private List<WebEstimate>? estimates;
+    private decimal totalCost = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            
+            obj = await Http.GetFromJsonAsync<ConstructionObject>($"http://localhost:5050/api/ConstructionObjects/{Id}");
+            
+            if (obj != null)
+            {
+                var allEstimates = await Http.GetFromJsonAsync<List<WebEstimate>>("http://localhost:5050/api/Estimates");
+                if (allEstimates != null)
+                {
+                    estimates = allEstimates.Where(e => e.ConstructionObjectId == Id).ToList();
+                    totalCost = estimates.Sum(e => e.TotalCost);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Черновик" => "bg-secondary",
+        "В работе" => "bg-primary",
+        "Согласование" => "bg-warning",
+        "Утверждена" => "bg-success",
+        "Завершена" => "bg-info",
+        _ => "bg-light"
+    };
+
+    private void EditObject()
+    {
+        Navigation.NavigateTo($"/object/{Id}/edit");
+    }
+
+    private void AddNewEstimate()
+    {
+        Navigation.NavigateTo($"/estimate/new/{Id}");
+    }
+
+    private void GoToEstimate(int estimateId)
+    {
+        Navigation.NavigateTo($"/estimate/{estimateId}");
+    }
+}

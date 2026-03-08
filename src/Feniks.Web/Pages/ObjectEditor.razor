@@ -1,0 +1,180 @@
+﻿@page "/object/{id:int}/edit"
+@page "/object/new"
+@using Feniks.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">@(isNewObject ? "➕ Новый объект строительства" : "✏️ Редактирование объекта")</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Название объекта *</label>
+                        <input type="text" class="form-control" @bind="objectName" placeholder="Например: Коттедж в Завидово" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Заказчик</label>
+                        <input type="text" class="form-control" @bind="objectCustomer" placeholder="ФИО или название организации" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Адрес</label>
+                        <input type="text" class="form-control" @bind="objectAddress" placeholder="Адрес строительства" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Бюджет, ₽</label>
+                            <input type="number" class="form-control" @bind="objectBudget" step="1000" min="0" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Статус</label>
+                            <select class="form-select" @bind="objectStatus">
+                                <option value="Черновик">Черновик</option>
+                                <option value="В работе">В работе</option>
+                                <option value="Завершен">Завершен</option>
+                                <option value="Заморожен">Заморожен</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Описание</label>
+                        <textarea class="form-control" @bind="objectDescription" rows="3"
+                                  placeholder="Дополнительная информация об объекте"></textarea>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button class="btn btn-secondary" @onclick="Cancel">Отмена</button>
+                        <button class="btn btn-primary" @onclick="SaveObject" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            @(isNewObject ? "Создать объект" : "Сохранить")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private bool isNewObject => !Id.HasValue || Id == 0;
+    private bool isSaving = false;
+    private string errorMessage = "";
+
+    private string objectName = "";
+    private string objectCustomer = "";
+    private string objectAddress = "";
+    private decimal objectBudget = 0;
+    private string objectStatus = "Черновик";
+    private string objectDescription = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!isNewObject)
+        {
+            await LoadObject();
+        }
+    }
+
+    private async Task LoadObject()
+    {
+        try
+        {
+            var obj = await Http.GetFromJsonAsync<ConstructionObject>($"http://localhost:5050/api/ConstructionObjects/{Id}");
+            if (obj != null)
+            {
+                objectName = obj.Name;
+                objectCustomer = obj.Customer;
+                objectAddress = obj.Address ?? "";
+                objectBudget = obj.Budget;
+                objectStatus = obj.Status;
+                objectDescription = obj.Description ?? "";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Ошибка загрузки объекта";
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task SaveObject()
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+        {
+            errorMessage = "Название объекта обязательно";
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            var obj = new ConstructionObject
+            {
+                Id = Id ?? 0,
+                Name = objectName,
+                Customer = objectCustomer,
+                Address = objectAddress,
+                Budget = objectBudget,
+                Status = objectStatus,
+                Description = objectDescription,
+                CreatedAt = DateTime.Now
+            };
+
+            HttpResponseMessage response;
+            if (isNewObject)
+            {
+                response = await Http.PostAsJsonAsync("http://localhost:5050/api/ConstructionObjects", obj);
+            }
+            else
+            {
+                response = await Http.PutAsJsonAsync($"http://localhost:5050/api/ConstructionObjects/{Id}", obj);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", isNewObject ? "Объект успешно создан!" : "Объект успешно обновлен!");
+                Navigation.NavigateTo("/objects");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Ошибка сохранения: {response.StatusCode}";
+                Console.WriteLine(error);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка: {ex.Message}";
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/objects");
+    }
+}

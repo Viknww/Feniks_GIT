@@ -340,3 +340,29 @@ code {
 .notification-info .notification-icon {
     color: #17a2b8;
 }
+/* Стили для активного объекта */
+.active-object {
+    background: linear-gradient(90deg, rgba(13, 110, 253, 0.2) 0%, rgba(13, 110, 253, 0.05) 100%);
+    border-left: 3px solid #0d6efd;
+}
+
+.active-object .object-icon i,
+.active-object .flex-grow-1 {
+    color: white !important;
+    font-weight: bold;
+}
+
+.parent-of-active {
+    background: linear-gradient(90deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.02) 100%);
+    border-left: 3px solid #ffc107;
+}
+
+.parent-of-active .flex-grow-1 {
+    color: #ffc107 !important;
+}
+
+/* Стили для активной сметы */
+.active-estimate {
+    background: linear-gradient(90deg, rgba(13, 110, 253, 0.15) 0%, rgba(13, 110, 253, 0.02) 100%);
+    border-radius: 4px;
+}

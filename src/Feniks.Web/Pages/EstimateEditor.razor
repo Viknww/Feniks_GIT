@@ -107,71 +107,71 @@
     }
 
     private async Task SaveEstimate()
+{
+    if (string.IsNullOrWhiteSpace(estimateName))
     {
-        if (string.IsNullOrWhiteSpace(estimateName))
+        errorMessage = "Название сметы обязательно";
+        return;
+    }
+
+    try
+    {
+        isSaving = true;
+        errorMessage = "";
+
+        var estimate = new WebEstimate
         {
-            errorMessage = "Название сметы обязательно";
-            return;
-        }
+            Name = estimateName,
+            Description = estimateDescription,
+            Status = estimateStatus,
+            ManagerName = managerName,
+            ConstructionObjectId = ObjectId,
+            CreatedAt = DateTime.Now
+        };
 
-        try
+        var response = await Http.PostAsJsonAsync("http://localhost:5050/api/Estimates", estimate);
+
+        if (response.IsSuccessStatusCode)
         {
-            isSaving = true;
-            errorMessage = "";
-
-            var estimate = new WebEstimate
+            var created = await response.Content.ReadFromJsonAsync<WebEstimate>();
+            
+            if (created != null)
             {
-                Name = estimateName,
-                Description = estimateDescription,
-                Status = estimateStatus,
-                ManagerName = managerName,
-                ConstructionObjectId = ObjectId,
-                CreatedAt = DateTime.Now
-            };
-
-            var response = await Http.PostAsJsonAsync("http://localhost:5050/api/Estimates", estimate);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var created = await response.Content.ReadFromJsonAsync<WebEstimate>();
-                
-                if (created != null)
+                // Создаем начальный этап для новой сметы
+                var defaultStage = new
                 {
-                    // Создаем начальный этап для новой сметы
-                    var defaultStage = new
-                    {
-                        EstimateId = created.Id,
-                        Name = "Новый этап",
-                        Description = "",
-                        OrderIndex = 0
-                    };
-                    
-                    await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateStages", defaultStage);
-                    
-                    // Уведомляем NavMenu об изменении данных
-                    NotificationService.NotifyDataChanged();
-                    
-                    await JS.InvokeVoidAsync("alert", "Смета успешно создана!");
-                    Navigation.NavigateTo($"/estimate/{created.Id}");
-                }
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Ошибка API: {errorContent}");
-                errorMessage = "Ошибка при создании сметы";
+                    EstimateId = created.Id,
+                    Name = "Новый этап",
+                    Description = "",
+                    OrderIndex = 0
+                };
+                
+                await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateStages", defaultStage);
+                
+                // Уведомляем NavMenu об изменении данных
+                NotificationService.NotifyDataChanged();
+                
+                await JS.InvokeVoidAsync("alert", "Смета успешно создана!");
+                Navigation.NavigateTo($"/estimate/{created.Id}");
             }
         }
-        catch (Exception ex)
+        else
         {
-            errorMessage = $"Ошибка: {ex.Message}";
-            Console.WriteLine(ex.Message);
-        }
-        finally
-        {
-            isSaving = false;
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Ошибка API: {errorContent}");
+            errorMessage = "Ошибка при создании сметы";
         }
     }
+    catch (Exception ex)
+    {
+        errorMessage = $"Ошибка: {ex.Message}";
+        Console.WriteLine(ex.Message);
+    }
+    finally
+    {
+        isSaving = false;
+    }
+}
 
     private void Cancel()
     {

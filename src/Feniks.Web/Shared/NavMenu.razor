@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
 
 <div class="sidebar-wrapper">
     <div class="sidebar-header">
@@ -136,6 +137,9 @@
         await LoadData();
         DetermineActiveItems();
         Navigation.LocationChanged += OnLocationChanged;
+        
+        // Подписываемся на уведомления об изменении данных
+        NotificationService.OnDataChanged += RefreshData;
     }
 
     protected override void OnParametersSet()
@@ -150,51 +154,82 @@
         StateHasChanged();
     }
 
-    private void DetermineActiveItems()
+    private async void RefreshData()
     {
-        var uri = Navigation.Uri.ToLower();
-        
-        var oldActiveObjectId = activeObjectId;
-        var oldActiveEstimateId = activeEstimateId;
-        
-        activeObjectId = null;
-        activeEstimateId = null;
-        
-        if (uri.Contains("/estimate/") && !uri.Contains("/new/") && !uri.Contains("/edit"))
+        Console.WriteLine("🔄 NavMenu: получено уведомление об изменении данных");
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private void DetermineActiveItems()
+{
+    var uri = Navigation.Uri.ToLower();
+    
+    var oldActiveObjectId = activeObjectId;
+    var oldActiveEstimateId = activeEstimateId;
+    
+    activeObjectId = null;
+    activeEstimateId = null;
+    
+    Console.WriteLine($"🔍 Определение активного элемента для URI: {uri}");
+    
+    // Проверяем страницу создания новой сметы
+    if (uri.Contains("/estimate/new/"))
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(uri, @"/estimate/new/(\d+)");
+        if (match.Success && int.TryParse(match.Groups[1].Value, out var objId))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(uri, @"/estimate/(\d+)");
-            if (match.Success && int.TryParse(match.Groups[1].Value, out var estId))
+            Console.WriteLine($"📌 Страница создания сметы для объекта ID: {objId}");
+            activeObjectId = objId;
+            
+            if (!expandedObjects.Contains(activeObjectId.Value))
             {
-                activeEstimateId = estId;
+                expandedObjects.Add(activeObjectId.Value);
+                _ = SaveExpandedState();
+            }
+        }
+    }
+    // Проверяем страницу просмотра сметы
+    else if (uri.Contains("/estimate/") && !uri.Contains("/new/") && !uri.Contains("/edit"))
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(uri, @"/estimate/(\d+)");
+        if (match.Success && int.TryParse(match.Groups[1].Value, out var estId))
+        {
+            Console.WriteLine($"📌 Страница просмотра сметы ID: {estId}");
+            activeEstimateId = estId;
+            
+            var estimate = objects?.SelectMany(o => o.Estimates ?? new List<Estimate>())
+                                  .FirstOrDefault(e => e.Id == estId);
+            if (estimate != null)
+            {
+                activeObjectId = estimate.ConstructionObjectId;
+                Console.WriteLine($"📌 Объект сметы ID: {activeObjectId}");
                 
-                var estimate = objects?.SelectMany(o => o.Estimates ?? new List<Estimate>())
-                                      .FirstOrDefault(e => e.Id == estId);
-                if (estimate != null)
+                if (!expandedObjects.Contains(activeObjectId.Value))
                 {
-                    activeObjectId = estimate.ConstructionObjectId;
-                    
-                    if (!expandedObjects.Contains(activeObjectId.Value))
-                    {
-                        expandedObjects.Add(activeObjectId.Value);
-                        _ = SaveExpandedState();
-                    }
+                    expandedObjects.Add(activeObjectId.Value);
+                    _ = SaveExpandedState();
                 }
             }
         }
-        else if (uri.Contains("/object/") && !uri.Contains("/edit") && !uri.Contains("/new"))
+    }
+    // Проверяем страницу объекта
+    else if (uri.Contains("/object/") && !uri.Contains("/edit") && !uri.Contains("/new"))
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(uri, @"/object/(\d+)");
+        if (match.Success && int.TryParse(match.Groups[1].Value, out var objId))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(uri, @"/object/(\d+)");
-            if (match.Success && int.TryParse(match.Groups[1].Value, out var objId))
-            {
-                activeObjectId = objId;
-            }
-        }
-        
-        if (oldActiveObjectId != activeObjectId || oldActiveEstimateId != activeEstimateId)
-        {
-            StateHasChanged();
+            Console.WriteLine($"📌 Страница объекта ID: {objId}");
+            activeObjectId = objId;
         }
     }
+    
+    if (oldActiveObjectId != activeObjectId || oldActiveEstimateId != activeEstimateId)
+    {
+        Console.WriteLine($"🔄 Активный элемент изменился: Object={activeObjectId}, Estimate={activeEstimateId}");
+        StateHasChanged();
+    }
+}
 
     private bool IsObjectActive(int objectId) => activeObjectId == objectId;
     private bool IsEstimateActive(int estimateId) => activeEstimateId == estimateId;
@@ -242,6 +277,7 @@
     public void Dispose()
     {
         Navigation.LocationChanged -= OnLocationChanged;
+        NotificationService.OnDataChanged -= RefreshData;
     }
 
     private async Task LoadData()

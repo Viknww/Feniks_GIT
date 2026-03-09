@@ -46,145 +46,172 @@
         <!-- Заголовок сметы -->
         <div class="estimate-header bg-white rounded-3 shadow-sm p-4 mb-4">
             <div class="d-flex justify-content-between align-items-start flex-wrap">
-    <div>
-        <div class="d-flex align-items-center gap-3 mb-2">
-            <h1 class="h3 mb-0">@estimate.Name  @customerTotal.ToString("N0") ₽</h1>
-           <!-- <span class="fw-bold fs-5 text-success">@customerTotal.ToString("N0") ₽</span>-->
-        </div>
-        <div class="d-flex gap-4 text-muted flex-wrap">
-            <span><i class="bi bi-building me-1"></i> Объект: @objectName</span>
-            <span><i class="bi bi-person me-1"></i> Менеджеры: @estimate.ManagerName, @estimate.ManagerEmail</span>
-        </div>
-        <div class="d-flex gap-3 mt-2 align-items-center">
-            <!-- Выпадающий список для выбора статуса -->
-            <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
-                <button class="btn btn-sm p-0 border-0" @onclick="ToggleStatusDropdown" style="background: none;">
-                    <span class="badge @GetStatusBadge(estimate.Status)" style="cursor: pointer; padding: 0.5em 0.8em;">
-                        @estimate.Status <i class="bi bi-chevron-down ms-1 small"></i>
-                    </span>
-                </button>
-                
-                @if (showStatusDropdown)
-                {
-                    <div style="position: absolute; top: 30px; left: 0; z-index: 1000; background: white; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.175); min-width: 160px; padding: 5px 0;">
-                        <button class="dropdown-item" @onclick="SetStatusDraft" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Черновик" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                            <span class="badge bg-secondary me-2" style="font-size: 0.8em;">⬤</span> Черновик
-                        </button>
-                        <button class="dropdown-item" @onclick="SetStatusApproval" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Согласование" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                            <span class="badge bg-info me-2" style="font-size: 0.8em;">⬤</span> Согласование
-                        </button>
-                        <button class="dropdown-item" @onclick="SetStatusInProgress" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "В работе" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                            <span class="badge bg-primary me-2" style="font-size: 0.8em;">⬤</span> В работе
-                        </button>
-                        <button class="dropdown-item" @onclick="SetStatusCompleted" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Завершена" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                            <span class="badge bg-success me-2" style="font-size: 0.8em;">⬤</span> Завершена
-                        </button>
+                <div>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <h1 class="h3 mb-0">@estimate.Name  @customerTotal.ToString("N0") ₽</h1>
                     </div>
-                }
-            </div>                        
-            <!-- Кнопка для открытия модального окна редактирования -->
-            <button class="btn btn-link text-muted p-0 border-0" @onclick="OpenEditModal" style="text-decoration: none;">
-                <i class="bi bi-pencil me-1"></i>Режим правки
-            </button>
-            
-            <span class="text-muted"><i class="bi bi-lock me-1"></i>Фиксация цены заказчика</span>
+                    <div class="d-flex gap-4 text-muted flex-wrap">
+                        <span><i class="bi bi-building me-1"></i> Объект: @objectName</span>
+                        <span><i class="bi bi-person me-1"></i> Менеджеры: @estimate.ManagerName, @estimate.ManagerEmail</span>
+                    </div>
+                    <div class="d-flex gap-3 mt-2 align-items-center">
+                        <!-- Выпадающий список для выбора статуса -->
+                        <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
+                            <button class="btn btn-sm p-0 border-0" @onclick="ToggleStatusDropdown" style="background: none;">
+                                <span class="badge @GetStatusBadge(estimate.Status)" style="cursor: pointer; padding: 0.5em 0.8em;">
+                                    @estimate.Status <i class="bi bi-chevron-down ms-1 small"></i>
+                                </span>
+                            </button>
+                            
+                            @if (showStatusDropdown)
+                            {
+                                <div style="position: absolute; top: 30px; left: 0; z-index: 1000; background: white; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.175); min-width: 160px; padding: 5px 0;">
+                                    <button class="dropdown-item" @onclick="SetStatusDraft" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Черновик" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
+                                        <span class="badge bg-secondary me-2" style="font-size: 0.8em;">⬤</span> Черновик
+                                    </button>
+                                    <button class="dropdown-item" @onclick="SetStatusApproval" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Согласование" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
+                                        <span class="badge bg-info me-2" style="font-size: 0.8em;">⬤</span> Согласование
+                                    </button>
+                                    <button class="dropdown-item" @onclick="SetStatusInProgress" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "В работе" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
+                                        <span class="badge bg-primary me-2" style="font-size: 0.8em;">⬤</span> В работе
+                                    </button>
+                                    <button class="dropdown-item" @onclick="SetStatusCompleted" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Завершена" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
+                                        <span class="badge bg-success me-2" style="font-size: 0.8em;">⬤</span> Завершена
+                                    </button>
+                                </div>
+                            }
+                        </div>                        
+                        <!-- Кнопка для открытия модального окна редактирования -->
+                        <button class="btn btn-link text-muted p-0 border-0" @onclick="OpenEditModal" style="text-decoration: none;">
+                            <i class="bi bi-pencil me-1"></i>Режим правки
+                        </button>
+                        
+                        <span class="text-muted"><i class="bi bi-lock me-1"></i>Фиксация цены заказчика</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary">Экспорт</button>
+                    <button class="btn btn-sm btn-outline-secondary">Обновить цены</button>
+                    <button class="btn btn-sm btn-outline-secondary">Создать копию</button>
+                    <button class="btn btn-sm btn-outline-secondary">Архивировать</button>
+                </div>
+            </div>
+        </div>
+
+<!-- Общий сворачиваемый блок стоимости -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light py-2" @onclick="ToggleCostSection" style="cursor: pointer;">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <span class="btn-collapse">
+                    <i class="bi @(expandedCostSection ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                </span>
+            </div>
+            <div class="row g-0 flex-grow-1 ms-2">
+                <!-- Заголовок себестоимости -->
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-between align-items-center pe-3">
+                        <h6 class="fw-bold fs-5 mb-0">Себестоимость: @totalCost.ToString("N0") ₽</h6>
+                        <!--<span class="fw-bold fs-5 ms-2">@totalCost.ToString("N0") ₽</span>-->
+                    </div>
+                </div>
+                <!-- Заголовок прибыли -->
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-between align-items-center pe-3">
+                        <h6 class="fw-bold fs-5 mb-0" style="color: #b45f06;">Прибыль: @profitTotal.ToString("N0") ₽</h6>
+                        <!--<span class="fw-bold fs-5 ms-2" style="color: #b45f06;">@profitTotal.ToString("N0") ₽</span>-->
+                    </div>
+                </div>
+                <!-- Заголовок заказчика -->
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold fs-5 mb-0 text-success">Стоимость для заказчика: @customerTotal.ToString("N0") ₽</h6>
+                        <!--<span class="fw-bold fs-5 ms-2 text-success">@customerTotal.ToString("N0") ₽</span>-->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-outline-secondary">Экспорт</button>
-        <button class="btn btn-sm btn-outline-secondary">Обновить цены</button>
-        <button class="btn btn-sm btn-outline-secondary">Создать копию</button>
-        <button class="btn btn-sm btn-outline-secondary">Архивировать</button>
-    </div>
+    
+    @if (expandedCostSection)
+    {
+        <div class="card-body">
+            <div class="row g-4">
+                <!-- Детали себестоимости -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Работы</span>
+                                <span class="fw-bold">@workCost.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Материалы</span>
+                                <span class="fw-bold">@materialCost.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Механизмы</span>
+                                <span class="fw-bold">@machineryCost.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Доставка</span>
+                                <span class="fw-bold">@deliveryCost.ToString("N0") ₽</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Детали прибыли -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Работы</span>
+                                <span class="fw-bold" style="color: #b45f06;">@profitWork.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Материалы</span>
+                                <span class="fw-bold" style="color: #b45f06;">@profitMaterial.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Механизмы</span>
+                                <span class="fw-bold" style="color: #b45f06;">@profitMachineryCost.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Доставка</span>
+                                <span class="fw-bold" style="color: #b45f06;">@profitDelivery.ToString("N0") ₽</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Детали заказчика -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Работы</span>
+                                <span class="fw-bold text-success">@customerWorkCost.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Материалы</span>
+                                <span class="fw-bold text-success">@customerMaterialCost.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Механизмы</span>
+                                <span class="fw-bold text-success">@customerMachineryCost.ToString("N0") ₽</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Доставка</span>
+                                <span class="fw-bold text-success">@customerDeliveryCost.ToString("N0") ₽</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
-        </div>
-
-        <!-- Блоки стоимости -->
-        <div class="row g-4 mb-4">
-            <!-- Первый блок: Себестоимость -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold fs-5 mb-0">Себестоимость, ₽</h6>
-                            <span class="fw-bold fs-5">@totalCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Работы</span>
-                            <span class="fw-bold">@workCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Материалы</span>
-                            <span class="fw-bold">@materialCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Механизмы</span>
-                            <span class="fw-bold">@machineryCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Доставка</span>
-                            <span class="fw-bold">@deliveryCost.ToString("N0") ₽</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Второй блок: Прибыль -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold fs-5 mb-0" style="color: #b45f06;">Прибыль, ₽</h6>
-                            <span class="fw-bold fs-5" style="color: #b45f06;">@profitTotal.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Работы</span>
-                            <span class="fw-bold" style="color: #b45f06;">@profitWork.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Материалы</span>
-                            <span class="fw-bold" style="color: #b45f06;">@profitMaterial.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Механизмы</span>
-                            <span class="fw-bold" style="color: #b45f06;">@profitMachineryCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Доставка</span>
-                            <span class="fw-bold" style="color: #b45f06;">@profitDelivery.ToString("N0") ₽</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Третий блок: Стоимость для заказчика -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold fs-5 mb-0 text-success">Стоимость для заказчика, ₽</h6>
-                            <span class="fw-bold fs-5 text-success">@customerTotal.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Работы</span>
-                            <span class="fw-bold text-success">@customerWorkCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Материалы</span>
-                            <span class="fw-bold text-success">@customerMaterialCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Механизмы</span>
-                            <span class="fw-bold text-success">@customerMachineryCost.ToString("N0") ₽</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Доставка</span>
-                            <span class="fw-bold text-success">@customerDeliveryCost.ToString("N0") ₽</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- Этапы сметы -->
         <div class="stages-container">
@@ -718,6 +745,15 @@
     private NewItem newItem = new();
     private bool showMoveModal = false;
     private int? moveToGroupId;
+
+    // Поле для общего сворачивания блока стоимости
+    private bool expandedCostSection = true;
+
+    private void ToggleCostSection()
+    {
+        expandedCostSection = !expandedCostSection;
+        StateHasChanged();
+    }
     
     // Поля для создания группы
     private bool isCreatingNewGroup = false;

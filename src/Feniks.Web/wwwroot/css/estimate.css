@@ -847,3 +847,21 @@ tr.table-primary td:first-child {
 .dropdown-item .badge {
     margin-right: 8px;
 }
+/* Стили для выпадающих меню */
+.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dropdown-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item:active {
+    background-color: #e7f1ff;
+}

@@ -811,3 +811,39 @@ tr.table-primary td:first-child {
 .tree-item-header .badge {
     cursor: pointer;
 }
+/* Стили для кастомного dropdown */
+.dropdown-menu {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 4px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.175);
+    min-width: 160px;
+    padding: 5px 0;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    clear: both;
+    font-weight: normal;
+    color: #333;
+    text-align: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item.active {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+}
+
+.dropdown-item .badge {
+    margin-right: 8px;
+}

@@ -55,30 +55,30 @@
                     <div class="d-flex gap-3 mt-2 align-items-center">
                         <!-- Выпадающий список для выбора статуса -->
                         <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
-    <button class="btn btn-sm p-0 border-0" @onclick="ToggleStatusDropdown" style="background: none;">
-        <span class="badge @GetStatusBadge(estimate.Status)" style="cursor: pointer; padding: 0.5em 0.8em;">
-            @estimate.Status <i class="bi bi-chevron-down ms-1 small"></i>
-        </span>
-    </button>
-    
-    @if (showStatusDropdown)
-    {
-        <div style="position: absolute; top: 30px; left: 0; z-index: 1000; background: white; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.175); min-width: 160px; padding: 5px 0;">
-            <button class="dropdown-item" @onclick="SetStatusDraft" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Черновик" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                <span class="badge bg-secondary me-2" style="font-size: 0.8em;">⬤</span> Черновик
-            </button>
-            <button class="dropdown-item" @onclick="SetStatusApproval" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Согласование" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                <span class="badge bg-info me-2" style="font-size: 0.8em;">⬤</span> Согласование
-            </button>
-            <button class="dropdown-item" @onclick="SetStatusInProgress" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "В работе" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                <span class="badge bg-primary me-2" style="font-size: 0.8em;">⬤</span> В работе
-            </button>
-            <button class="dropdown-item" @onclick="SetStatusCompleted" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Завершена" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                <span class="badge bg-success me-2" style="font-size: 0.8em;">⬤</span> Завершена
-            </button>
-        </div>
-    }
-</div>                        
+                            <button class="btn btn-sm p-0 border-0" @onclick="ToggleStatusDropdown" style="background: none;">
+                                <span class="badge @GetStatusBadge(estimate.Status)" style="cursor: pointer; padding: 0.5em 0.8em;">
+                                    @estimate.Status <i class="bi bi-chevron-down ms-1 small"></i>
+                                </span>
+                            </button>
+                            
+                            @if (showStatusDropdown)
+                            {
+                                <div style="position: absolute; top: 30px; left: 0; z-index: 1000; background: white; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.175); min-width: 160px; padding: 5px 0;">
+                                    <button class="dropdown-item" @onclick="SetStatusDraft" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Черновик" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
+                                        <span class="badge bg-secondary me-2" style="font-size: 0.8em;">⬤</span> Черновик
+                                    </button>
+                                    <button class="dropdown-item" @onclick="SetStatusApproval" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Согласование" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
+                                        <span class="badge bg-info me-2" style="font-size: 0.8em;">⬤</span> Согласование
+                                    </button>
+                                    <button class="dropdown-item" @onclick="SetStatusInProgress" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "В работе" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
+                                        <span class="badge bg-primary me-2" style="font-size: 0.8em;">⬤</span> В работе
+                                    </button>
+                                    <button class="dropdown-item" @onclick="SetStatusCompleted" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Завершена" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
+                                        <span class="badge bg-success me-2" style="font-size: 0.8em;">⬤</span> Завершена
+                                    </button>
+                                </div>
+                            }
+                        </div>                        
                         <!-- Кнопка для открытия модального окна редактирования -->
                         <button class="btn btn-link text-muted p-0 border-0" @onclick="OpenEditModal" style="text-decoration: none;">
                             <i class="bi bi-pencil me-1"></i>Режим правки
@@ -219,7 +219,12 @@
                                     else
                                     {
                                         <h6 class="mb-0 fw-bold">@stage.Name</h6>
-                                        <button class="btn btn-sm btn-link py-0" @onclick="() => EditStage(stage)" @onclick:stopPropagation="true">✏️</button>
+                                        <button class="btn btn-sm btn-link py-0" @onclick="() => EditStage(stage)" @onclick:stopPropagation="true">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link py-0 text-danger" @onclick="() => ShowDeleteStageModal(stage)" @onclick:stopPropagation="true">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     }
                                 </div>
                                 <div class="d-flex align-items-center gap-3" @onclick:stopPropagation="true">
@@ -636,6 +641,57 @@
                 </div>
             </div>
         }
+
+        <!-- Модальное окно подтверждения удаления этапа -->
+        @if (showDeleteStageModal)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">⚠️ Удаление этапа</h5>
+                            <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteStageModal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="fw-bold">Вы действительно хотите удалить этап <span class="text-danger">"@(stageToDelete?.Name)"</span>?</p>
+                            
+                            @if (stageItemsCount > 0)
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <strong>Внимание!</strong> Вместе с этапом будут удалены:
+                                    <ul class="mt-2 mb-0">
+                                        <li><strong>@stageItemsCount</strong> позиций</li>
+                                        @{
+                                            var groupsCount = groups.Count(g => g.StageId == stageToDelete?.Id);
+                                            if (groupsCount > 0)
+                                            {
+                                                <li><strong>@groupsCount</strong> групп</li>
+                                            }
+                                        }
+                                    </ul>
+                                    <p class="mt-2 mb-0 text-danger">Это действие нельзя отменить!</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted">В этом этапе нет позиций.</p>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" @onclick="CloseDeleteStageModal">Отмена</button>
+                            <button class="btn btn-danger" @onclick="ConfirmDeleteStage" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                }
+                                Удалить этап
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     }
 </div>
 
@@ -674,6 +730,11 @@
     private string editManagerName = "";
     private string editManagerEmail = "";
 
+    // Поля для удаления этапа
+    private bool showDeleteStageModal = false;
+    private EstimateStage? stageToDelete;
+    private int stageItemsCount = 0;
+
     // Словари для хранения состояния свертывания
     private Dictionary<int, bool> stageExpandedState = new();
     private Dictionary<int, bool> groupExpandedState = new();
@@ -692,10 +753,12 @@
         public int? StageId { get; set; }
         public int? GroupId { get; set; }
     }
-private async Task SetStatusDraft() => await ChangeStatus("Черновик");
-private async Task SetStatusApproval() => await ChangeStatus("Согласование");
-private async Task SetStatusInProgress() => await ChangeStatus("В работе");
-private async Task SetStatusCompleted() => await ChangeStatus("Завершена");
+
+    private async Task SetStatusDraft() => await ChangeStatus("Черновик");
+    private async Task SetStatusApproval() => await ChangeStatus("Согласование");
+    private async Task SetStatusInProgress() => await ChangeStatus("В работе");
+    private async Task SetStatusCompleted() => await ChangeStatus("Завершена");
+
     protected override async Task OnInitializedAsync()
     {
         Console.WriteLine($"🚀 Estimate инициализирован с ID: {Id}");
@@ -1308,6 +1371,86 @@ private async Task SetStatusCompleted() => await ChangeStatus("Завершен�
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // Методы для удаления этапа
+    private void ShowDeleteStageModal(EstimateStage stage)
+    {
+        stageToDelete = stage;
+        stageItemsCount = items.Count(i => i.StageId == stage.Id);
+        showDeleteStageModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseDeleteStageModal()
+    {
+        showDeleteStageModal = false;
+        stageToDelete = null;
+        stageItemsCount = 0;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteStage()
+    {
+        if (stageToDelete == null) return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            // Удаляем все позиции этапа
+            var stageItems = items.Where(i => i.StageId == stageToDelete.Id).ToList();
+            foreach (var item in stageItems)
+            {
+                await Http.DeleteAsync($"http://localhost:5050/api/EstimateItems/{item.Id}");
+            }
+
+            // Удаляем группы этапа
+            var stageGroups = groups.Where(g => g.StageId == stageToDelete.Id).ToList();
+            foreach (var group in stageGroups)
+            {
+                await Http.DeleteAsync($"http://localhost:5050/api/EstimateItemGroups/{group.Id}");
+            }
+
+            // Удаляем сам этап
+            var response = await Http.DeleteAsync($"http://localhost:5050/api/EstimateStages/{stageToDelete.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Удаляем из локальных списков
+                stages.Remove(stageToDelete);
+                
+                // Удаляем позиции и группы из локальных списков
+                items.RemoveAll(i => i.StageId == stageToDelete.Id);
+                groups.RemoveAll(g => g.StageId == stageToDelete.Id);
+                
+                // Удаляем из словарей состояний
+                stageExpandedState.Remove(stageToDelete.Id);
+                
+                Console.WriteLine($"✅ Этап '{stageToDelete.Name}' удален");
+                
+                NotificationService.NotifyDataChanged();
+                CloseDeleteStageModal();
+                StateHasChanged();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Ошибка удаления этапа: {error}");
+                await JS.InvokeVoidAsync("alert", $"Ошибка при удалении этапа: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Ошибка: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
         }
         finally
         {

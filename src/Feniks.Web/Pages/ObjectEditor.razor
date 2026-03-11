@@ -29,18 +29,6 @@
                         <input type="text" class="form-control" @bind="objectAddress" placeholder="Адрес строительства" />
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Статус</label>
-                            <select class="form-select" @bind="objectStatus">
-                                <option value="Черновик">Черновик</option>
-                                <option value="В работе">В работе</option>
-                                <option value="Завершен">Завершен</option>
-                                <option value="Заморожен">Заморожен</option>
-                            </select>
-                        </div>
-                    </div>
-
                     <div class="mb-3">
                         <label class="form-label fw-bold">Описание</label>
                         <textarea class="form-control" @bind="objectDescription" rows="3"
@@ -91,7 +79,6 @@
     private string objectName = "";
     private string objectCustomer = "";
     private string objectAddress = "";
-    private string objectStatus = "Черновик";
     private string objectDescription = "";
     private decimal objectBudget = 0;
 
@@ -113,7 +100,6 @@
                 objectName = obj.Name;
                 objectCustomer = obj.Customer;
                 objectAddress = obj.Address ?? "";
-                objectStatus = obj.Status;
                 objectDescription = obj.Description ?? "";
                 
                 // Загружаем сметы для расчета бюджета
@@ -151,7 +137,6 @@
                 Name = objectName,
                 Customer = objectCustomer,
                 Address = objectAddress,
-                Status = objectStatus,
                 Description = objectDescription,
                 CreatedAt = DateTime.Now
             };

@@ -35,11 +35,13 @@
                     <div class="card shadow-sm h-100">
                         <div class="card-body">
                             <h5 class="card-title">@obj.Name</h5>
+                            <p class="card-text text-muted small">@obj.Customer</p>
                             <p class="card-text text-muted small">@obj.Address</p>
                             
                             <div class="d-flex justify-content-between mt-3">
-                                <div>
-                                    <span class="badge @GetStatusBadge(obj.Status)">@obj.Status</span>
+                                <div class="text-start">
+                                    <small class="text-muted d-block">Смет</small>
+                                    <strong>@GetEstimateCount(obj.Id)</strong>
                                 </div>
                                 <div class="text-end">
                                     <small class="text-muted d-block">Бюджет</small>
@@ -68,6 +70,7 @@
     private List<ConstructionObject>? objects;
     private List<SharedEstimate>? allEstimates;
     private Dictionary<int, decimal> objectBudgets = new();
+    private Dictionary<int, int> objectEstimateCounts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,11 +91,12 @@
             
             if (objects != null && allEstimates != null)
             {
-                // Для каждого объекта вычисляем бюджет как сумму себестоимостей его смет
+                // Для каждого объекта вычисляем бюджет и количество смет
                 foreach (var obj in objects)
                 {
                     var objEstimates = allEstimates.Where(e => e.ConstructionObjectId == obj.Id);
                     objectBudgets[obj.Id] = objEstimates.Sum(e => e.TotalCost);
+                    objectEstimateCounts[obj.Id] = objEstimates.Count();
                 }
             }
         }
@@ -107,19 +111,15 @@
         }
     }
 
+    private int GetEstimateCount(int objectId)
+    {
+        return objectEstimateCounts.ContainsKey(objectId) ? objectEstimateCounts[objectId] : 0;
+    }
+
     private decimal GetObjectBudget(ConstructionObject obj)
     {
         return objectBudgets.ContainsKey(obj.Id) ? objectBudgets[obj.Id] : 0;
     }
-
-    private string GetStatusBadge(string status) => status switch
-    {
-        "Черновик" => "bg-secondary",
-        "В работе" => "bg-primary",
-        "Завершен" => "bg-success",
-        "Заморожен" => "bg-warning",
-        _ => "bg-light"
-    };
 
     private void CreateNewObject()
     {

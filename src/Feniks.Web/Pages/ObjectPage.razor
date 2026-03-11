@@ -21,11 +21,10 @@
         <!-- Заголовок объекта -->
         <div class="d-flex justify-content-between align-items-start mb-4">
             <div>
-                <h2>@obj.Name</h2>
+                <h2 class="fw-bold">@obj.Name</h2>
                 <div class="d-flex gap-3 text-muted">
                     <span><i class="bi bi-person me-1"></i>@obj.Customer</span>
                     <span><i class="bi bi-geo-alt me-1"></i>@obj.Address</span>
-                    <span class="badge @GetStatusBadge(obj.Status)">@obj.Status</span>
                 </div>
             </div>
             <button class="btn btn-outline-primary" @onclick="EditObject">
@@ -33,46 +32,121 @@
             </button>
         </div>
 
-        <!-- Финансовые показатели -->
-        <div class="row g-4 mb-4">
+        <!-- Компактные финансовые показатели -->
+        <div class="row g-3 mb-4">
             <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Бюджет объекта (себестоимость)</h6>
-                        <h3 class="mb-0">@totalCost.ToString("N0") ₽</h3>
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Количество смет</h6>
+                                <h4 class="mb-0 fw-bold">@(estimates?.Count ?? 0)</h4>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-files fs-4 text-primary"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
             <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Всего смет</h6>
-                        <h3 class="mb-0">@(estimates?.Count ?? 0)</h3>
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Себестоимость</h6>
+                                <h4 class="mb-0 fw-bold">@totalCost.ToString("N0") ₽</h4>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-calculator fs-4 text-info"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
             <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Общая стоимость (для заказчика)</h6>
-                        <h3 class="mb-0">@totalCustomerPrice.ToString("N0") ₽</h3>
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Прибыль</h6>
+                                <h4 class="mb-0 fw-bold" style="color: #b45f06;">@totalProfit.ToString("N0") ₽</h4>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-graph-up-arrow fs-4" style="color: #b45f06;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Для заказчика</h6>
+                                <h4 class="mb-0 fw-bold text-success">@totalCustomerPrice.ToString("N0") ₽</h4>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-currency-ruble fs-4 text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Оплачено</h6>
+                                <h4 class="mb-0 fw-bold text-info">@totalPaid.ToString("N0") ₽</h4>
+                                <small class="text-muted">будет позже</small>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-check2-circle fs-4 text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Задолженность</h6>
+                                <h4 class="mb-0 fw-bold text-danger">@totalDebt.ToString("N0") ₽</h4>
+                                <small class="text-muted">будет позже</small>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-exclamation-triangle fs-4 text-danger"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Список смет объекта -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Сметы объекта</h5>
-                <button class="btn btn-primary btn-sm" @onclick="AddNewEstimate">
-                    <i class="bi bi-plus-circle me-1"></i>Новая смета
-                </button>
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">Сметы объекта</h5>
+                    <button class="btn btn-primary btn-sm" @onclick="AddNewEstimate">
+                        <i class="bi bi-plus-circle me-1"></i>Новая смета
+                    </button>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 @if (estimates == null || !estimates.Any())
                 {
-                    <div class="text-center py-4 text-muted">
+                    <div class="text-center py-5 text-muted">
                         <i class="bi bi-file-earmark-text fs-1 d-block mb-3"></i>
                         <p>У объекта нет смет</p>
                     </div>
@@ -80,25 +154,32 @@
                 else
                 {
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
                                 <tr>
-                                    <th>Название сметы</th>
-                                    <th>Статус</th>
-                                    <th>Себестоимость</th>
-                                    <th>Стоимость для заказчика</th>
-                                    <th>Дата создания</th>
+                                    <th class="px-4 py-3">Название сметы</th>
+                                    <th class="py-3">Статус</th>
+                                    <th class="py-3 text-end">Себестоимость</th>
+                                    <th class="py-3 text-end">Для заказчика</th>
+                                    <th class="py-3 text-end">Прибыль</th>
+                                    <th class="py-3 text-end">Дата</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var est in estimates)
                                 {
-                                    <tr style="cursor: pointer;" @onclick="() => GoToEstimate(est.Id)">
-                                        <td class="fw-bold">@est.Name</td>
-                                        <td><span class="badge @GetStatusBadge(est.Status)">@est.Status</span></td>
-                                        <td>@est.TotalCost.ToString("N0") ₽</td>
-                                        <td class="text-success fw-bold">@est.CustomerPrice.ToString("N0") ₽</td>
-                                        <td>@est.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                    var profit = est.CustomerPrice - est.TotalCost;
+                                    var profitPercent = est.TotalCost > 0 ? (profit / est.TotalCost * 100) : 0;
+                                    <tr style="cursor: pointer;" @onclick="() => GoToEstimate(est.Id)" class="border-bottom">
+                                        <td class="px-4 py-3 fw-medium">@est.Name</td>
+                                        <td class="py-3"><span class="badge @GetStatusBadge(est.Status) px-3 py-2">@est.Status</span></td>
+                                        <td class="py-3 text-end fw-medium">@est.TotalCost.ToString("N0") ₽</td>
+                                        <td class="py-3 text-end text-success fw-bold">@est.CustomerPrice.ToString("N0") ₽</td>
+                                        <td class="py-3 text-end" style="color: #b45f06;">
+                                            <span class="fw-bold">@profit.ToString("N0") ₽</span>
+                                            <small class="text-muted ms-1">(@profitPercent.ToString("F0")%)</small>
+                                        </td>
+                                        <td class="py-3 text-end text-muted">@est.CreatedAt.ToString("dd.MM.yyyy")</td>
                                     </tr>
                                 }
                             </tbody>
@@ -118,6 +199,9 @@
     private List<SharedEstimate>? estimates;
     private decimal totalCost = 0;
     private decimal totalCustomerPrice = 0;
+    private decimal totalProfit = 0;
+    private decimal totalPaid = 0;
+    private decimal totalDebt = 0;
     private int currentId;
 
     protected override async Task OnInitializedAsync()
@@ -133,7 +217,6 @@
         {
             currentId = Id;
             Console.WriteLine($"🔄 Параметр ID изменился на: {Id}");
-            // Запускаем асинхронную загрузку без ожидания
             _ = LoadData();
         }
     }
@@ -157,6 +240,11 @@
                     estimates = allEstimates.Where(e => e.ConstructionObjectId == Id).ToList();
                     totalCost = estimates.Sum(e => e.TotalCost);
                     totalCustomerPrice = estimates.Sum(e => e.CustomerPrice);
+                    totalProfit = totalCustomerPrice - totalCost;
+                    
+                    // Заглушки (позже будут браться из таблицы Payment)
+                    totalPaid = totalCustomerPrice / 3;
+                    totalDebt = totalCustomerPrice - totalPaid;
                 }
                 Console.WriteLine($"✅ Данные для объекта {Id} загружены");
             }
@@ -180,10 +268,10 @@
     {
         "Черновик" => "bg-secondary",
         "В работе" => "bg-primary",
-        "Согласование" => "bg-warning",
+        "Согласование" => "bg-warning text-dark",
         "Утверждена" => "bg-success",
         "Завершена" => "bg-info",
-        _ => "bg-light"
+        _ => "bg-light text-dark"
     };
 
     private void EditObject()

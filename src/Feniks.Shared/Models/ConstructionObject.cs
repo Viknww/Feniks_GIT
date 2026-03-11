@@ -11,7 +11,9 @@ public class ConstructionObject
     public string? Description { get; set; }
     public string Customer { get; set; } = string.Empty;
     public string? Address { get; set; }
-    public string Status { get; set; } = "В работе";
+    
+    // Статус удален - он не нужен для объектов
+    
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }

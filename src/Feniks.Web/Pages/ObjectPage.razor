@@ -32,112 +32,98 @@
             </button>
         </div>
 
-        <!-- Компактные финансовые показатели -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="card border-0 bg-light">
-                    <div class="card-body py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Количество смет</h6>
-                                <h4 class="mb-0 fw-bold">@(estimates?.Count ?? 0)</h4>
-                            </div>
-                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-files fs-4 text-primary"></i>
-                            </div>
+                <!-- Компактные финансовые показатели в одну строку -->
+        <div class="row g-2 mb-4 row-cols-2 row-cols-sm-3 row-cols-md-6">
+            <div class="col">
+                <div class="card border-0 bg-light py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-primary bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-files fs-6 text-primary"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Смет</span>
+                            <span class="fw-bold" style="font-size: 1rem;">@(estimates?.Count ?? 0)</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card border-0 bg-light">
-                    <div class="card-body py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Себестоимость</h6>
-                                <h4 class="mb-0 fw-bold">@totalCost.ToString("N0") ₽</h4>
-                            </div>
-                            <div class="bg-info bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-calculator fs-4 text-info"></i>
-                            </div>
+            <div class="col">
+                <div class="card border-0 bg-light py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-info bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-calculator fs-6 text-info"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Себ-ть</span>
+                            <span class="fw-bold" style="font-size: 1rem;">@FormatNumber(totalCost) ₽</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card border-0 bg-light">
-                    <div class="card-body py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Прибыль</h6>
-                                <h4 class="mb-0 fw-bold" style="color: #b45f06;">@totalProfit.ToString("N0") ₽</h4>
-                            </div>
-                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-graph-up-arrow fs-4" style="color: #b45f06;"></i>
-                            </div>
+            <div class="col">
+                <div class="card border-0 bg-light py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-warning bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-graph-up-arrow fs-6" style="color: #b45f06;"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Прибыль</span>
+                            <span class="fw-bold" style="font-size: 1rem; color: #b45f06;">@FormatNumber(totalProfit) ₽</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card border-0 bg-light">
-                    <div class="card-body py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Для заказчика</h6>
-                                <h4 class="mb-0 fw-bold text-success">@totalCustomerPrice.ToString("N0") ₽</h4>
-                            </div>
-                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-currency-ruble fs-4 text-success"></i>
-                            </div>
+            <div class="col">
+                <div class="card border-0 bg-light py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-success bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-people fs-6 text-success"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Заказчик</span>
+                            <span class="fw-bold text-success" style="font-size: 1rem;">@FormatNumber(totalCustomerPrice) ₽</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card border-0 bg-light">
-                    <div class="card-body py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Оплачено</h6>
-                                <h4 class="mb-0 fw-bold text-info">@totalPaid.ToString("N0") ₽</h4>
-                                <small class="text-muted">будет позже</small>
-                            </div>
-                            <div class="bg-info bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-check2-circle fs-4 text-info"></i>
-                            </div>
+            <div class="col">
+                <div class="card border-0 bg-light py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-info bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-check2-circle fs-6 text-info"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Оплачено</span>
+                            <span class="fw-bold text-info" style="font-size: 1rem;">@FormatNumber(totalPaid) ₽</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card border-0 bg-light">
-                    <div class="card-body py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Задолженность</h6>
-                                <h4 class="mb-0 fw-bold text-danger">@totalDebt.ToString("N0") ₽</h4>
-                                <small class="text-muted">будет позже</small>
-                            </div>
-                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-exclamation-triangle fs-4 text-danger"></i>
-                            </div>
+            <div class="col">
+                <div class="card border-0 bg-light py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-danger bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-exclamation-triangle fs-6 text-danger"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Долг</span>
+                            <span class="fw-bold text-danger" style="font-size: 1rem;">@FormatNumber(totalDebt) ₽</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Список смет объекта -->
+                <!-- Список смет объекта -->
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
+            <div class="card-header bg-white py-2">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">Сметы объекта</h5>
+                    <h6 class="mb-0 fw-bold">Сметы объекта</h6>
                     <button class="btn btn-primary btn-sm" @onclick="AddNewEstimate">
                         <i class="bi bi-plus-circle me-1"></i>Новая смета
                     </button>
@@ -146,23 +132,23 @@
             <div class="card-body p-0">
                 @if (estimates == null || !estimates.Any())
                 {
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-file-earmark-text fs-1 d-block mb-3"></i>
-                        <p>У объекта нет смет</p>
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-file-earmark-text fs-1 d-block mb-2"></i>
+                        <p class="small">У объекта нет смет</p>
                     </div>
                 }
                 else
                 {
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="px-4 py-3">Название сметы</th>
-                                    <th class="py-3">Статус</th>
-                                    <th class="py-3 text-end">Себестоимость</th>
-                                    <th class="py-3 text-end">Для заказчика</th>
-                                    <th class="py-3 text-end">Прибыль</th>
-                                    <th class="py-3 text-end">Дата</th>
+                                    <th class="px-3 py-2">Название сметы</th>
+                                    <th class="py-2">Статус</th>
+                                    <th class="py-2 text-end">Себестоимость</th>
+                                    <th class="py-2 text-end">Прибыль</th>
+                                    <th class="py-2 text-end">Для заказчика</th>
+                                    <th class="py-2 text-end">Дата</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -171,15 +157,15 @@
                                     var profit = est.CustomerPrice - est.TotalCost;
                                     var profitPercent = est.TotalCost > 0 ? (profit / est.TotalCost * 100) : 0;
                                     <tr style="cursor: pointer;" @onclick="() => GoToEstimate(est.Id)" class="border-bottom">
-                                        <td class="px-4 py-3 fw-medium">@est.Name</td>
-                                        <td class="py-3"><span class="badge @GetStatusBadge(est.Status) px-3 py-2">@est.Status</span></td>
-                                        <td class="py-3 text-end fw-medium">@est.TotalCost.ToString("N0") ₽</td>
-                                        <td class="py-3 text-end text-success fw-bold">@est.CustomerPrice.ToString("N0") ₽</td>
-                                        <td class="py-3 text-end" style="color: #b45f06;">
-                                            <span class="fw-bold">@profit.ToString("N0") ₽</span>
-                                            <small class="text-muted ms-1">(@profitPercent.ToString("F0")%)</small>
+                                        <td class="px-3 py-2 fw-medium">@est.Name</td>
+                                        <td class="py-2"><span class="badge @GetStatusBadge(est.Status)" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">@est.Status</span></td>
+                                        <td class="py-2 text-end fw-medium">@FormatNumber(est.TotalCost) ₽</td>
+                                        <td class="py-2 text-end" style="color: #b45f06;">
+                                            <span class="fw-bold">@FormatNumber(profit) ₽</span>
+                                            <small class="text-muted ms-1" style="font-size: 0.7rem;">(@profitPercent.ToString("F0")%)</small>
                                         </td>
-                                        <td class="py-3 text-end text-muted">@est.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                        <td class="py-2 text-end text-success fw-bold">@FormatNumber(est.CustomerPrice) ₽</td>
+                                        <td class="py-2 text-end text-muted" style="font-size: 0.8rem;">@est.CreatedAt.ToString("dd.MM.yyyy")</td>
                                     </tr>
                                 }
                             </tbody>
@@ -287,5 +273,17 @@
     private void GoToEstimate(int estimateId)
     {
         Navigation.NavigateTo($"/estimate/{estimateId}");
+    }
+
+    // Метод для форматирования чисел
+    private string FormatNumber(decimal value)
+    {
+        if (value >= 1_000_000_000)
+            return $"{(value / 1_000_000_000):F1} млрд";
+        if (value >= 1_000_000)
+            return $"{(value / 1_000_000):F1} млн";
+        if (value >= 1_000)
+            return $"{(value / 1_000):F1} тыс";
+        return value.ToString("N0");
     }
 }

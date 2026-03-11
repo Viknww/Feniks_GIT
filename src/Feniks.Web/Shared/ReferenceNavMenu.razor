@@ -8,8 +8,8 @@
 @inject NotificationService NotificationService
 @inject DataSyncService DataSyncService
 
-<div class="sidebar-wrapper">
-    <div class="sidebar-header">
+<div class="sidebar-wrapper" style="width: 280px; overflow-y: auto; overflow-x: hidden;">
+    <div class="sidebar-header" style="padding: 1rem;">
         <div class="logo d-flex align-items-center gap-2 mb-3">
             <i class="bi bi-book fs-4 text-primary"></i>
             <h5 class="mb-0 text-white">СПРАВОЧНИКИ</h5>
@@ -33,7 +33,7 @@
         </div>
     </div>
 
-    <div class="sidebar-content">
+    <div class="sidebar-content" style="padding: 0 1rem 1rem 1rem;">
         <div class="menu-section">
             @if (isLoading)
             {
@@ -45,39 +45,39 @@
             else if (filteredCategories == null || !filteredCategories.Any())
             {
                 <div class="text-white-50 text-center py-4">
-                    <i class="bi bi-book fs-4 d-block mb-2"></i>
+                    <i class="bi bi-folder-open fs-4 d-block mb-2"></i>
                     @(string.IsNullOrEmpty(searchTerm) ? "Нет справочников" : "Ничего не найдено")
                 </div>
             }
             else
             {
-                <!-- Дерево категорий и справочников -->
-                <div class="tree-view">
+                <!-- Дерево категорий и справочников с фиксированной структурой -->
+                <div class="tree-view" style="min-height: 300px;">
                     @foreach (var category in filteredCategories)
                     {
                         var isCategoryActive = IsCategoryActive(category.Id);
                         var hasActiveCatalog = HasActiveCatalog(category.Id);
                         var categoryClass = isCategoryActive ? "active-object" : (hasActiveCatalog ? "parent-of-active" : "");
                         
-                        <div class="tree-item @categoryClass">
-                            <!-- Заголовок категории -->
-                            <div class="tree-item-header d-flex align-items-center gap-2">
-                                <span class="toggle-icon" @onclick="() => ToggleCategory(category.Id)" style="cursor: pointer;">
+                        <div class="tree-item @categoryClass" style="margin-bottom: 0.5rem;">
+                            <!-- Заголовок категории - фиксированная высота 36px -->
+                            <div class="tree-item-header d-flex align-items-center gap-2" style="height: 36px; padding: 0 4px;">
+                                <span class="toggle-icon" @onclick="() => ToggleCategory(category.Id)" style="cursor: pointer; width: 20px; display: inline-flex; justify-content: center;">
                                     <i class="bi @(expandedCategories.Contains(category.Id) ? "bi-chevron-down" : "bi-chevron-right")"></i>
                                 </span>
                                 
-                                <span class="object-icon" @onclick="() => ToggleCategory(category.Id)" style="cursor: pointer;">
+                                <span class="object-icon" @onclick="() => ToggleCategory(category.Id)" style="cursor: pointer; width: 20px; display: inline-flex; justify-content: center;">
                                     <i class="bi bi-folder"></i>
                                 </span>
                                 
-                                <span class="flex-grow-1 @(isCategoryActive || hasActiveCatalog ? "text-white fw-bold" : "text-white-50")" 
+                                <span class="flex-grow-1 text-truncate @(isCategoryActive || hasActiveCatalog ? "text-white fw-bold" : "text-white-50")" 
                                       @onclick="() => GoToCategory(category.Id)" 
-                                      style="cursor: pointer;">
+                                      style="cursor: pointer; max-width: 160px; font-size: 0.9rem; line-height: 36px;">
                                     @category.Name
                                 </span>
                                 
                                 <span class="badge @(GetCatalogsCount(category.Id) > 0 ? "bg-info" : "bg-secondary")" 
-                                      style="font-size: 10px; cursor: pointer;"
+                                      style="font-size: 10px; cursor: pointer; min-width: 24px; text-align: center;"
                                       @onclick="() => ToggleCategory(category.Id)">
                                     @GetCatalogsCount(category.Id)
                                 </span>
@@ -85,7 +85,7 @@
 
                             @if (expandedCategories.Contains(category.Id))
                             {
-                                <div class="tree-children">
+                                <div class="tree-children" style="margin-left: 24px; margin-top: 4px;">
                                     @if (catalogs != null && catalogs.Any(c => c.CategoryId == category.Id))
                                     {
                                         @foreach (var catalog in catalogs.Where(c => c.CategoryId == category.Id).OrderBy(c => c.Name))
@@ -95,22 +95,20 @@
                                             
                                             <div class="tree-child-item d-flex align-items-center gap-2 py-1 @activeClass"
                                                  @onclick="() => GoToCatalog(catalog.Id)"
-                                                 style="cursor: pointer;">
-                                                <i class="bi bi-folder2-open child-icon"></i>
-                                                <span class="@(isActive ? "text-white fw-bold" : "text-white-50") small flex-grow-1">@catalog.Name</span>
-                                                @if (isActive)
-                                                {
-                                                    <i class="bi bi-check-circle-fill small me-1" style="color: #f1c40f !important;"></i>
-                                                }
+                                                 style="cursor: pointer; height: 28px; padding: 0 4px;">
+                                                <i class="bi bi-folder2-open child-icon" style="width: 20px;"></i>
+                                                <span class="@(isActive ? "text-white fw-bold" : "text-white-50") small flex-grow-1 text-truncate" 
+                                                      style="max-width: 160px; line-height: 28px; font-size: 0.85rem;">@catalog.Name</span>
+                                                <span class="badge bg-secondary" style="font-size: 9px; min-width: 24px; text-align: center;">@GetItemsCount(catalog.Id)</span>
                                             </div>
                                         }
                                     }
 
                                     <div class="tree-child-item d-flex align-items-center gap-2 py-1 text-primary"
                                          @onclick="() => GoToNewCatalog(category.Id)"
-                                         style="cursor: pointer;">
-                                        <i class="bi bi-plus-circle"></i>
-                                        <span class="small">Добавить справочник</span>
+                                         style="cursor: pointer; height: 28px; padding: 0 4px;">
+                                        <i class="bi bi-plus-circle" style="width: 20px;"></i>
+                                        <span class="small" style="line-height: 28px; font-size: 0.85rem;">Добавить справочник</span>
                                     </div>
                                 </div>
                             }
@@ -121,6 +119,93 @@
         </div>
     </div>
 </div>
+
+<style>
+    .sidebar-wrapper {
+        width: 280px;
+        background: linear-gradient(180deg, #1a1f2b 0%, #141824 100%);
+        color: white;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: fixed;
+    }
+    
+    .sidebar-wrapper::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .sidebar-wrapper::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+    
+    .sidebar-wrapper::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .search-box .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .search-box input {
+        padding-left: 30px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    
+    .search-box input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .search-box input:focus {
+        background-color: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: none;
+    }
+    
+    .tree-item-header:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+    
+    .tree-child-item:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+    
+    .active-object,
+    .active-object .tree-item-header {
+        background-color: rgba(13, 110, 253, 0.2) !important;
+        border-radius: 4px;
+    }
+    
+    .active-estimate {
+        background-color: rgba(13, 110, 253, 0.3) !important;
+        border-radius: 4px;
+    }
+    
+    .parent-of-active .tree-item-header {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+        border-radius: 4px;
+    }
+    
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
 
 @code {
     private bool isLoading = true;
@@ -140,7 +225,7 @@
     {
         Navigation.LocationChanged += OnLocationChanged;
         NotificationService.OnDataChanged += HandleDataChanged;
-        DataSyncService.OnReferenceChanged += HandleAnyDataChanged;
+        DataSyncService.OnReferenceChanged += HandleReferenceChanged;
     }
 
     protected override async Task OnInitializedAsync()
@@ -171,7 +256,7 @@
         });
     }
 
-    private async Task HandleAnyDataChanged(int id)
+    private async Task HandleReferenceChanged(int id)
     {
         await InvokeAsync(async () =>
         {
@@ -276,7 +361,7 @@
     {
         Navigation.LocationChanged -= OnLocationChanged;
         NotificationService.OnDataChanged -= HandleDataChanged;
-        DataSyncService.OnReferenceChanged -= HandleAnyDataChanged;
+        DataSyncService.OnReferenceChanged -= HandleReferenceChanged;
     }
 
     private async Task LoadData()

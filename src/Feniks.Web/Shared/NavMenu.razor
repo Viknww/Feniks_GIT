@@ -97,7 +97,7 @@
                                                  style="cursor: pointer; height: 28px; padding: 0 4px;">
                                                 <i class="bi bi-dot child-icon" style="width: 20px;"></i>
                                                 <span class="@(isActive ? "text-white fw-bold" : "text-white-50") small flex-grow-1 text-truncate" 
-                                                      style="max-width: 160px; line-height: 28px;">@est.Name</span>
+                                                      style="max-width: 160px; line-height: 28px; font-size: 0.85rem;">@est.Name</span>
                                                 @if (isActive)
                                                 {
                                                     <i class="bi bi-check-circle-fill small me-1" style="color: #f1c40f !important; width: 16px;"></i>
@@ -114,7 +114,7 @@
                                          @onclick="() => GoToNewEstimate(obj.Id)"
                                          style="cursor: pointer; height: 28px; padding: 0 4px;">
                                         <i class="bi bi-plus-circle" style="width: 20px;"></i>
-                                        <span class="small" style="line-height: 28px;">Добавить смету</span>
+                                        <span class="small" style="line-height: 28px; font-size: 0.85rem;">Добавить смету</span>
                                     </div>
                                 </div>
                             }
@@ -211,6 +211,20 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    
+    /* Фиксируем ширину заголовка в любом состоянии */
+    .sidebar-header .logo h5 {
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Единая высота для всех элементов */
+    .tree-item-header,
+    .tree-child-item {
+        box-sizing: border-box;
+    }
 </style>
 
 @code {
@@ -264,7 +278,6 @@
         });
     }
 
-    // ИСПРАВЛЕНО: методы теперь возвращают Task
     private async Task HandleEstimateChanged(int id)
     {
         await InvokeAsync(async () =>

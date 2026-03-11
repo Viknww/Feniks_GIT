@@ -118,10 +118,24 @@
     private List<SharedEstimate>? estimates;
     private decimal totalCost = 0;
     private decimal totalCustomerPrice = 0;
+    private int currentId;
 
     protected override async Task OnInitializedAsync()
     {
+        currentId = Id;
+        Console.WriteLine($"🔄 ObjectPage инициализирован с ID: {Id}");
         await LoadData();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (currentId != Id)
+        {
+            currentId = Id;
+            Console.WriteLine($"🔄 Параметр ID изменился на: {Id}");
+            // Запускаем асинхронную загрузку без ожидания
+            _ = LoadData();
+        }
     }
 
     private async Task LoadData()
@@ -129,6 +143,9 @@
         try
         {
             isLoading = true;
+            StateHasChanged();
+            
+            Console.WriteLine($"📥 Загрузка данных для объекта ID: {Id}");
             
             obj = await Http.GetFromJsonAsync<ConstructionObject>($"http://localhost:5050/api/ConstructionObjects/{Id}");
             
@@ -141,11 +158,16 @@
                     totalCost = estimates.Sum(e => e.TotalCost);
                     totalCustomerPrice = estimates.Sum(e => e.CustomerPrice);
                 }
+                Console.WriteLine($"✅ Данные для объекта {Id} загружены");
+            }
+            else
+            {
+                Console.WriteLine($"❌ Объект {Id} не найден");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+            Console.WriteLine($"❌ Ошибка загрузки: {ex.Message}");
         }
         finally
         {

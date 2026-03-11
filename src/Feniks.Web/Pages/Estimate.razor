@@ -22,6 +22,29 @@
         <span>@(estimate?.Name ?? "")</span>
     </div>
 
+    <!-- ОТЛАДОЧНЫЙ БЛОК - временно покажет все позиции -->
+    @if (items.Any())
+    {
+        <div class="alert alert-info mb-3">
+            <details>
+                <summary>🔍 Отладка: загружено @items.Count позиций</summary>
+                <ul style="font-size: 0.8rem; max-height: 200px; overflow-y: auto;">
+                    @foreach (var item in items)
+                    {
+                        <li>
+                            ID: @item.Id, 
+                            Название: @item.Name, 
+                            StageId: @(item.StageId?.ToString() ?? "null"), 
+                            GroupId: @(item.GroupId?.ToString() ?? "null"), 
+                            Цена: @item.Price.ToString("F2"), 
+                            Кол-во: @item.Quantity.ToString("F2")
+                        </li>
+                    }
+                </ul>
+            </details>
+        </div>
+    }
+
     @if (isLoading)
     {
         <div class="text-center py-5">
@@ -50,8 +73,8 @@
             <div class="d-flex justify-content-between align-items-start flex-wrap">
                 <div>
                     <div class="d-flex align-items-center gap-3 mb-2">
-                        <h1 class="h3 mb-0">@estimate.Name <span class="h3 mb-0 text-success fw-bold">@customerTotal.ToString("N0") ₽</span></h1>
-                        
+                        <h1 class="h3 mb-0">@estimate.Name</h1>
+                        <span class="h3 mb-0 text-success fw-bold">@customerTotal.ToString("N0") ₽</span>
                     </div>
                     <div class="d-flex gap-4 text-muted flex-wrap">
                         <span><i class="bi bi-building me-1"></i> Объект: @objectName</span>
@@ -374,13 +397,16 @@
 
                                             <!-- ========== ПОЗИЦИИ БЕЗ ГРУППЫ ========== -->
                                             @{
-                                                var ungroupedItems = items.Where(i => i.GroupId == null && i.StageId == stage.Id).OrderBy(i => i.OrderIndex).ToList();
+                                                var ungroupedItems = items
+                                                    .Where(i => i.GroupId == null && (i.StageId == stage.Id || i.StageId == null))
+                                                    .OrderBy(i => i.OrderIndex)
+                                                    .ToList();
                                             }
                                             @if (ungroupedItems.Any())
                                             {
                                                 <tr class="table-secondary">
                                                     <td colspan="12" class="py-1 px-2">
-                                                        <span class="fw-bold">Позиции без группы</span>
+                                                        <span class="fw-bold">Позиции без группы (@ungroupedItems.Count)</span>
                                                     </td>
                                                 </tr>
                                                 @foreach (var item in ungroupedItems)
@@ -555,6 +581,10 @@
                                             <option value="@stage.Id">@stage.Name</option>
                                         }
                                     </select>
+                                    @if (newItem.StageId == null)
+                                    {
+                                        <small class="text-danger">Этап обязателен!</small>
+                                    }
                                 </div>
                                 
                                 <!-- Режим создания новой группы -->
@@ -1262,8 +1292,16 @@
 
     private void ShowAddItemDialog(int? stageId)
     {
-        newItem = new NewItem { StageId = stageId };
+        newItem = new NewItem { 
+            StageId = stageId,
+            Type = "P",
+            Unit = "шт",
+            Quantity = 1,
+            Markup = 0,
+            Price = 0
+        };
         showAddDialog = true;
+        Console.WriteLine($"📝 Открыто модальное окно добавления для этапа ID: {stageId}");
         StateHasChanged();
     }
 
@@ -1343,12 +1381,22 @@
 
     private async Task AddItem()
     {
-        if (string.IsNullOrWhiteSpace(newItem.Name) || newItem.StageId == null)
+        // Проверяем, что название заполнено
+        if (string.IsNullOrWhiteSpace(newItem.Name))
         {
-            await JS.InvokeVoidAsync("alert", "Заполните название и выберите этап");
+            await JS.InvokeVoidAsync("alert", "Заполните наименование позиции");
             return;
         }
 
+        // ВАЖНО: Проверяем, что StageId установлен
+        if (!newItem.StageId.HasValue)
+        {
+            await JS.InvokeVoidAsync("alert", "Ошибка: не выбран этап. Пожалуйста, закройте и откройте модальное окно заново.");
+            Console.WriteLine("❌ Ошибка: newItem.StageId = null");
+            return;
+        }
+
+        // Проверка на создание новой группы
         if (newItem.GroupId == -1)
         {
             isCreatingNewGroupInAdd = true;
@@ -1362,22 +1410,30 @@
             isSaving = true;
             StateHasChanged();
 
+            // Логируем отправляемые данные
+            Console.WriteLine($"📤 Отправка данных в API:");
+            Console.WriteLine($"   - EstimateId: {Id}");
+            Console.WriteLine($"   - StageId: {newItem.StageId} (ОБЯЗАТЕЛЬНО)");
+            Console.WriteLine($"   - GroupId: {newItem.GroupId}");
+            Console.WriteLine($"   - Name: {newItem.Name}");
+            Console.WriteLine($"   - Quantity: {newItem.Quantity}");
+            Console.WriteLine($"   - Price: {newItem.Price}");
+            Console.WriteLine($"   - Markup: {newItem.Markup}");
+
             var itemToAdd = new
             {
                 EstimateId = Id,
                 GroupId = newItem.GroupId,
                 StageId = newItem.StageId,
                 Name = newItem.Name,
-                Unit = newItem.Unit,
+                Unit = newItem.Unit ?? "шт",
                 Quantity = newItem.Quantity,
                 Price = newItem.Price,
                 Markup = newItem.Markup,
-                Type = newItem.Type,
+                Type = newItem.Type ?? "P",
                 OrderIndex = items.Count,
                 CustomerPrice = newItem.Price * (1 + newItem.Markup / 100)
             };
-
-            Console.WriteLine($"Добавление позиции: {System.Text.Json.JsonSerializer.Serialize(itemToAdd)}");
 
             var response = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItems", itemToAdd);
             
@@ -1386,10 +1442,8 @@
                 var createdItem = await response.Content.ReadFromJsonAsync<EstimateItem>();
                 if (createdItem != null)
                 {
+                    Console.WriteLine($"✅ Позиция успешно создана с ID: {createdItem.Id}, StageId: {createdItem.StageId}");
                     items.Add(createdItem);
-                    Console.WriteLine($"✅ Позиция добавлена с ID: {createdItem.Id}");
-                    
-                    StateHasChanged();
                 }
                 
                 CloseAddDialog();
@@ -1401,13 +1455,13 @@
             else
             {
                 var error = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"❌ Ошибка добавления: {error}");
+                Console.WriteLine($"❌ Ошибка API: {response.StatusCode} - {error}");
                 await JS.InvokeVoidAsync("alert", $"Ошибка при добавлении: {response.StatusCode}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Ошибка: {ex.Message}");
+            Console.WriteLine($"❌ Исключение: {ex.Message}");
             await JS.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
         }
         finally

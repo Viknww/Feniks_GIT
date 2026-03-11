@@ -1,6 +1,6 @@
 @page "/object/{id:int}"
-@using Feniks.Web.Models
-@using WebEstimate = Feniks.Web.Models.Estimate
+@using Feniks.Shared.Models
+@using SharedEstimate = Feniks.Shared.Models.Estimate
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -38,8 +38,8 @@
             <div class="col-md-4">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2">Бюджет объекта</h6>
-                        <h3 class="mb-0">@obj.Budget.ToString("N0") ₽</h3>
+                        <h6 class="text-muted mb-2">Бюджет объекта (себестоимость)</h6>
+                        <h3 class="mb-0">@totalCost.ToString("N0") ₽</h3>
                     </div>
                 </div>
             </div>
@@ -54,8 +54,8 @@
             <div class="col-md-4">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2">Общая стоимость</h6>
-                        <h3 class="mb-0">@totalCost.ToString("N0") ₽</h3>
+                        <h6 class="text-muted mb-2">Общая стоимость (для заказчика)</h6>
+                        <h3 class="mb-0">@totalCustomerPrice.ToString("N0") ₽</h3>
                     </div>
                 </div>
             </div>
@@ -85,7 +85,8 @@
                                 <tr>
                                     <th>Название сметы</th>
                                     <th>Статус</th>
-                                    <th>Стоимость</th>
+                                    <th>Себестоимость</th>
+                                    <th>Стоимость для заказчика</th>
                                     <th>Дата создания</th>
                                 </tr>
                             </thead>
@@ -96,6 +97,7 @@
                                         <td class="fw-bold">@est.Name</td>
                                         <td><span class="badge @GetStatusBadge(est.Status)">@est.Status</span></td>
                                         <td>@est.TotalCost.ToString("N0") ₽</td>
+                                        <td class="text-success fw-bold">@est.CustomerPrice.ToString("N0") ₽</td>
                                         <td>@est.CreatedAt.ToString("dd.MM.yyyy")</td>
                                     </tr>
                                 }
@@ -113,8 +115,9 @@
 
     private bool isLoading = true;
     private ConstructionObject? obj;
-    private List<WebEstimate>? estimates;
+    private List<SharedEstimate>? estimates;
     private decimal totalCost = 0;
+    private decimal totalCustomerPrice = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,11 +134,12 @@
             
             if (obj != null)
             {
-                var allEstimates = await Http.GetFromJsonAsync<List<WebEstimate>>("http://localhost:5050/api/Estimates");
+                var allEstimates = await Http.GetFromJsonAsync<List<SharedEstimate>>("http://localhost:5050/api/Estimates");
                 if (allEstimates != null)
                 {
                     estimates = allEstimates.Where(e => e.ConstructionObjectId == Id).ToList();
                     totalCost = estimates.Sum(e => e.TotalCost);
+                    totalCustomerPrice = estimates.Sum(e => e.CustomerPrice);
                 }
             }
         }
@@ -146,6 +150,7 @@
         finally
         {
             isLoading = false;
+            StateHasChanged();
         }
     }
 

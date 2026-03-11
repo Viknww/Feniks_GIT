@@ -1,6 +1,7 @@
 ﻿@page "/object/{id:int}/edit"
 @page "/object/new"
 @using Feniks.Shared.Models
+@using SharedEstimate = Feniks.Shared.Models.Estimate
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
@@ -30,10 +31,6 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Бюджет, ₽</label>
-                            <input type="number" class="form-control" @bind="objectBudget" step="1000" min="0" />
-                        </div>
-                        <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Статус</label>
                             <select class="form-select" @bind="objectStatus">
                                 <option value="Черновик">Черновик</option>
@@ -49,6 +46,19 @@
                         <textarea class="form-control" @bind="objectDescription" rows="3"
                                   placeholder="Дополнительная информация об объекте"></textarea>
                     </div>
+
+                    @if (!isNewObject)
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Бюджет объекта рассчитывается автоматически как сумма себестоимостей всех смет.
+                            @if (objectBudget > 0)
+                            {
+                                <br/>
+                                <strong>Текущий бюджет: @objectBudget.ToString("N0") ₽</strong>
+                            }
+                        </div>
+                    }
 
                     @if (!string.IsNullOrEmpty(errorMessage))
                     {
@@ -81,9 +91,9 @@
     private string objectName = "";
     private string objectCustomer = "";
     private string objectAddress = "";
-    private decimal objectBudget = 0;
     private string objectStatus = "Черновик";
     private string objectDescription = "";
+    private decimal objectBudget = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,9 +113,16 @@
                 objectName = obj.Name;
                 objectCustomer = obj.Customer;
                 objectAddress = obj.Address ?? "";
-                objectBudget = obj.Budget;
                 objectStatus = obj.Status;
                 objectDescription = obj.Description ?? "";
+                
+                // Загружаем сметы для расчета бюджета
+                var allEstimates = await Http.GetFromJsonAsync<List<SharedEstimate>>("http://localhost:5050/api/Estimates");
+                if (allEstimates != null)
+                {
+                    var objEstimates = allEstimates.Where(e => e.ConstructionObjectId == obj.Id);
+                    objectBudget = objEstimates.Sum(e => e.TotalCost);
+                }
             }
         }
         catch (Exception ex)
@@ -128,13 +145,12 @@
             isSaving = true;
             errorMessage = "";
 
-            var obj = new ConstructionObject
+            var obj = new
             {
                 Id = Id ?? 0,
                 Name = objectName,
                 Customer = objectCustomer,
                 Address = objectAddress,
-                Budget = objectBudget,
                 Status = objectStatus,
                 Description = objectDescription,
                 CreatedAt = DateTime.Now
@@ -152,7 +168,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                await JS.InvokeVoidAsync("alert", isNewObject ? "Объект успешно создан!" : "Объект успешно обновлен!");
+                await JS.InvokeVoidAsync("alert", isNewObject ? "✅ Объект успешно создан!" : "✅ Объект успешно обновлен!");
                 Navigation.NavigateTo("/objects");
             }
             else

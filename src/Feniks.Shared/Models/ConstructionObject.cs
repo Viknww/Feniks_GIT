@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Feniks.Shared.Models;
 
@@ -10,11 +11,15 @@ public class ConstructionObject
     public string? Description { get; set; }
     public string Customer { get; set; } = string.Empty;
     public string? Address { get; set; }
-    public decimal Budget { get; set; }
     public string Status { get; set; } = "В работе";
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     
+    // Навигационное свойство для связанных смет
     public ICollection<Estimate> Estimates { get; set; } = new List<Estimate>();
+    
+    // Вычисляемое свойство для бюджета (НЕ ХРАНИТСЯ В БД)
+    [NotMapped]
+    public decimal Budget => Estimates?.Sum(e => e.TotalCost) ?? 0;
 }

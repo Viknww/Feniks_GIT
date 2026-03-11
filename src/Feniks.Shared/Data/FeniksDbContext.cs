@@ -30,11 +30,8 @@ public class FeniksDbContext : DbContext
     {
         // ========== СУЩЕСТВУЮЩИЕ НАСТРОЙКИ ==========
         
-        // ConstructionObject
-        modelBuilder.Entity<ConstructionObject>()
-            .Property(o => o.Budget)
-            .HasPrecision(18, 2);
-            
+        // ConstructionObject - НАСТРОЙКИ ДЛЯ BUDGET УДАЛЕНЫ
+        
         // Estimate
         modelBuilder.Entity<Estimate>()
             .Property(e => e.TotalCost)

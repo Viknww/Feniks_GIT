@@ -1,13 +1,13 @@
 ﻿@page "/objects"
 @using Feniks.Shared.Models
+@using SharedEstimate = Feniks.Shared.Models.Estimate
 @inject HttpClient Http
 @inject NavigationManager Navigation
-@inject IJSRuntime JS
 
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Объекты строительства</h2>
-        <button class="btn btn-primary" @onclick="GoToNewObject">
+        <button class="btn btn-primary" @onclick="CreateNewObject">
             <i class="bi bi-plus-circle me-1"></i>Новый объект
         </button>
     </div>
@@ -24,49 +24,37 @@
         <div class="text-center py-5 text-muted">
             <i class="bi bi-building fs-1 d-block mb-3"></i>
             <p>Нет объектов строительства</p>
-            <button class="btn btn-outline-primary" @onclick="GoToNewObject">
-                Создать первый объект
-            </button>
         </div>
     }
     else
     {
-        <div class="row">
+        <div class="row g-4">
             @foreach (var obj in objects)
             {
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span class="badge @GetStatusBadge(obj.Status)">@obj.Status</span>
-                            <div>
-                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditObject(obj.Id)" title="Редактировать">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteObject(obj.Id)" title="Удалить">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm h-100">
                         <div class="card-body">
                             <h5 class="card-title">@obj.Name</h5>
-                            <p class="card-text small text-muted mb-2">
-                                <i class="bi bi-person me-1"></i>@obj.Customer
-                            </p>
-                            @if (!string.IsNullOrEmpty(obj.Address))
-                            {
-                                <p class="card-text small text-muted mb-2">
-                                    <i class="bi bi-geo-alt me-1"></i>@obj.Address
-                                </p>
-                            }
+                            <p class="card-text text-muted small">@obj.Address</p>
+                            
                             <div class="d-flex justify-content-between mt-3">
-                                <span class="fw-bold">Бюджет: @obj.Budget.ToString("N0") ₽</span>
-                                <span class="badge bg-info">0</span>
+                                <div>
+                                    <span class="badge @GetStatusBadge(obj.Status)">@obj.Status</span>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted d-block">Бюджет</small>
+                                    <strong>@GetObjectBudget(obj).ToString("N0") ₽</strong>
+                                </div>
                             </div>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <button class="btn btn-outline-primary btn-sm w-100" @onclick="() => GoToObjectEstimates(obj.Id)">
-                                <i class="bi bi-layers me-1"></i>Сметы объекта
-                            </button>
+                            
+                            <div class="mt-3 d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewObject(obj.Id)">
+                                    <i class="bi bi-eye"></i> Открыть
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => EditObject(obj.Id)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -78,6 +66,8 @@
 @code {
     private bool isLoading = true;
     private List<ConstructionObject>? objects;
+    private List<SharedEstimate>? allEstimates;
+    private Dictionary<int, decimal> objectBudgets = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -89,7 +79,22 @@
         try
         {
             isLoading = true;
+            
+            // Загружаем все объекты
             objects = await Http.GetFromJsonAsync<List<ConstructionObject>>("http://localhost:5050/api/ConstructionObjects");
+            
+            // Загружаем все сметы
+            allEstimates = await Http.GetFromJsonAsync<List<SharedEstimate>>("http://localhost:5050/api/Estimates");
+            
+            if (objects != null && allEstimates != null)
+            {
+                // Для каждого объекта вычисляем бюджет как сумму себестоимостей его смет
+                foreach (var obj in objects)
+                {
+                    var objEstimates = allEstimates.Where(e => e.ConstructionObjectId == obj.Id);
+                    objectBudgets[obj.Id] = objEstimates.Sum(e => e.TotalCost);
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -98,7 +103,13 @@
         finally
         {
             isLoading = false;
+            StateHasChanged();
         }
+    }
+
+    private decimal GetObjectBudget(ConstructionObject obj)
+    {
+        return objectBudgets.ContainsKey(obj.Id) ? objectBudgets[obj.Id] : 0;
     }
 
     private string GetStatusBadge(string status) => status switch
@@ -107,37 +118,21 @@
         "В работе" => "bg-primary",
         "Завершен" => "bg-success",
         "Заморожен" => "bg-warning",
-        _ => "bg-info"
+        _ => "bg-light"
     };
 
-    private void GoToNewObject()
+    private void CreateNewObject()
     {
         Navigation.NavigateTo("/object/new");
+    }
+
+    private void ViewObject(int id)
+    {
+        Navigation.NavigateTo($"/object/{id}");
     }
 
     private void EditObject(int id)
     {
         Navigation.NavigateTo($"/object/{id}/edit");
-    }
-
-    private void GoToObjectEstimates(int id)
-    {
-        Navigation.NavigateTo($"/objects/{id}/estimates");
-    }
-
-    private async Task DeleteObject(int id)
-    {
-        if (await JS.InvokeAsync<bool>("confirm", "Удалить объект?"))
-        {
-            try
-            {
-                await Http.DeleteAsync($"http://localhost:5050/api/ConstructionObjects/{id}");
-                await LoadObjects();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка удаления: {ex.Message}");
-            }
-        }
     }
 }

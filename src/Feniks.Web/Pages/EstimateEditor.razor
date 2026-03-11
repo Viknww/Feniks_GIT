@@ -1,6 +1,6 @@
 @page "/estimate/new/{objectId:int}"
-@using Feniks.Web.Models
-@using WebEstimate = Feniks.Web.Models.Estimate
+@using Feniks.Shared.Models
+@using SharedEstimate = Feniks.Shared.Models.Estimate
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
@@ -107,71 +107,74 @@
     }
 
     private async Task SaveEstimate()
-{
-    if (string.IsNullOrWhiteSpace(estimateName))
     {
-        errorMessage = "Название сметы обязательно";
-        return;
-    }
-
-    try
-    {
-        isSaving = true;
-        errorMessage = "";
-
-        var estimate = new WebEstimate
+        if (string.IsNullOrWhiteSpace(estimateName))
         {
-            Name = estimateName,
-            Description = estimateDescription,
-            Status = estimateStatus,
-            ManagerName = managerName,
-            ConstructionObjectId = ObjectId,
-            CreatedAt = DateTime.Now
-        };
+            errorMessage = "Название сметы обязательно";
+            return;
+        }
 
-        var response = await Http.PostAsJsonAsync("http://localhost:5050/api/Estimates", estimate);
-
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var created = await response.Content.ReadFromJsonAsync<WebEstimate>();
-            
-            if (created != null)
+            isSaving = true;
+            errorMessage = "";
+
+            var estimate = new SharedEstimate
             {
-                // Создаем начальный этап для новой сметы
-                var defaultStage = new
+                Name = estimateName,
+                Description = estimateDescription,
+                Status = estimateStatus,
+                ManagerName = managerName,
+                ConstructionObjectId = ObjectId,
+                CreatedAt = DateTime.Now,
+                TotalCost = 0,
+                CustomerPrice = 0
+            };
+
+            var response = await Http.PostAsJsonAsync("http://localhost:5050/api/Estimates", estimate);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<SharedEstimate>();
+                
+                if (created != null)
                 {
-                    EstimateId = created.Id,
-                    Name = "Новый этап",
-                    Description = "",
-                    OrderIndex = 0
-                };
-                
-                await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateStages", defaultStage);
-                
-                // Уведомляем NavMenu об изменении данных
-                NotificationService.NotifyDataChanged();
-                
-                await JS.InvokeVoidAsync("alert", "Смета успешно создана!");
-                Navigation.NavigateTo($"/estimate/{created.Id}");
+                    // Создаем начальный этап для новой сметы
+                    var defaultStage = new
+                    {
+                        EstimateId = created.Id,
+                        Name = "Новый этап",
+                        Description = "",
+                        OrderIndex = 0,
+                        IsExpanded = true
+                    };
+                    
+                    await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateStages", defaultStage);
+                    
+                    // Уведомляем NavMenu об изменении данных
+                    NotificationService.NotifyDataChanged();
+                    
+                    await JS.InvokeVoidAsync("alert", "Смета успешно создана!");
+                    Navigation.NavigateTo($"/estimate/{created.Id}");
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Ошибка API: {errorContent}");
+                errorMessage = "Ошибка при создании сметы";
             }
         }
-        else
+        catch (Exception ex)
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Ошибка API: {errorContent}");
-            errorMessage = "Ошибка при создании сметы";
+            errorMessage = $"Ошибка: {ex.Message}";
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
-    catch (Exception ex)
-    {
-        errorMessage = $"Ошибка: {ex.Message}";
-        Console.WriteLine(ex.Message);
-    }
-    finally
-    {
-        isSaving = false;
-    }
-}
 
     private void Cancel()
     {

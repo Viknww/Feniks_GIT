@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject NotificationService NotificationService
+@inject DataSyncService DataSyncService
 
 <div class="sidebar-wrapper">
     <div class="sidebar-header">
@@ -135,13 +136,18 @@
     private int? activeCategoryId;
     private int? activeCatalogId;
 
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        NotificationService.OnDataChanged += HandleDataChanged;
+        DataSyncService.OnReferenceChanged += HandleAnyDataChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadExpandedState();
         await LoadData();
         DetermineActiveItems();
-        Navigation.LocationChanged += OnLocationChanged;
-        NotificationService.OnDataChanged += RefreshData;
     }
 
     protected override void OnParametersSet()
@@ -156,10 +162,22 @@
         StateHasChanged();
     }
 
-    private async void RefreshData()
+    private async void HandleDataChanged()
     {
-        await LoadData();
-        StateHasChanged();
+        await InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
+    }
+
+    private async Task HandleAnyDataChanged(int id)
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
     }
 
     private void DetermineActiveItems()
@@ -257,7 +275,8 @@
     public void Dispose()
     {
         Navigation.LocationChanged -= OnLocationChanged;
-        NotificationService.OnDataChanged -= RefreshData;
+        NotificationService.OnDataChanged -= HandleDataChanged;
+        DataSyncService.OnReferenceChanged -= HandleAnyDataChanged;
     }
 
     private async Task LoadData()

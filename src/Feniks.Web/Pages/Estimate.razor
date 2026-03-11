@@ -1,6 +1,7 @@
 ﻿@page "/estimate/{id:int}"
 @using Microsoft.AspNetCore.Components.WebAssembly.Hosting
 @using Feniks.Shared.Models
+@using Feniks.Web.Services
 @using SharedEstimate = Feniks.Shared.Models.Estimate
 @using SharedConstructionObject = Feniks.Shared.Models.ConstructionObject
 @implements IDisposable
@@ -9,6 +10,7 @@
 @inject IJSRuntime JS
 @inject IWebAssemblyHostEnvironment HostEnvironment
 @inject NotificationService NotificationService
+@inject DataSyncService DataSyncService
 
 <link href="css/estimate.css" rel="stylesheet" />
 
@@ -48,7 +50,8 @@
             <div class="d-flex justify-content-between align-items-start flex-wrap">
                 <div>
                     <div class="d-flex align-items-center gap-3 mb-2">
-                        <h1 class="h3 mb-0">@estimate.Name  @customerTotal.ToString("N0") ₽</h1>
+                        <h1 class="h3 mb-0">@estimate.Name <span class="h3 mb-0 text-success fw-bold">@customerTotal.ToString("N0") ₽</span></h1>
+                        
                     </div>
                     <div class="d-flex gap-4 text-muted flex-wrap">
                         <span><i class="bi bi-building me-1"></i> Объект: @objectName</span>
@@ -106,26 +109,12 @@
                         <span class="btn-collapse">
                             <i class="bi @(expandedCostSection ? "bi-chevron-down" : "bi-chevron-right")"></i>
                         </span>
+                        <span class="fw-bold">Финансовые показатели</span>
                     </div>
-                    <div class="row g-0 flex-grow-1 ms-2">
-                        <!-- Заголовок себестоимости -->
-                        <div class="col-md-4">
-                            <div class="d-flex justify-content-between align-items-center pe-3">
-                                <h6 class="fw-bold fs-5 mb-0">Себестоимость: @totalCost.ToString("N0") ₽</h6>
-                            </div>
-                        </div>
-                        <!-- Заголовок прибыли -->
-                        <div class="col-md-4">
-                            <div class="d-flex justify-content-between align-items-center pe-3">
-                                <h6 class="fw-bold fs-5 mb-0" style="color: #b45f06;">Прибыль: @profitTotal.ToString("N0") ₽</h6>
-                            </div>
-                        </div>
-                        <!-- Заголовок заказчика -->
-                        <div class="col-md-4">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h6 class="fw-bold fs-5 mb-0 text-success">Стоимость для заказчика: @customerTotal.ToString("N0") ₽</h6>
-                            </div>
-                        </div>
+                    <div class="d-flex gap-4">
+                        <span class="text-primary fw-bold">Себестоимость: @totalCost.ToString("N0") ₽</span>
+                        <span class="fw-bold" style="color: #b45f06;">Прибыль: @profitTotal.ToString("N0") ₽</span>
+                        <span class="text-success fw-bold">Для заказчика: @customerTotal.ToString("N0") ₽</span>
                     </div>
                 </div>
             </div>
@@ -134,10 +123,10 @@
             {
                 <div class="card-body">
                     <div class="row g-4">
-                        <!-- Детали себестоимости -->
                         <div class="col-md-4">
                             <div class="card shadow-sm">
                                 <div class="card-body">
+                                    <h6 class="text-muted mb-3">Себестоимость по типам</h6>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Работы</span>
                                         <span class="fw-bold">@workCost.ToString("N0") ₽</span>
@@ -157,11 +146,10 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Детали прибыли -->
                         <div class="col-md-4">
                             <div class="card shadow-sm">
                                 <div class="card-body">
+                                    <h6 class="text-muted mb-3">Прибыль по типам</h6>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Работы</span>
                                         <span class="fw-bold" style="color: #b45f06;">@profitWork.ToString("N0") ₽</span>
@@ -181,11 +169,10 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Детали заказчика -->
                         <div class="col-md-4">
                             <div class="card shadow-sm">
                                 <div class="card-body">
+                                    <h6 class="text-muted mb-3">Для заказчика по типам</h6>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Работы</span>
                                         <span class="fw-bold text-success">@customerWorkCost.ToString("N0") ₽</span>
@@ -211,234 +198,234 @@
         </div>
 
         <!-- Этапы сметы -->
-<div class="stages-container">
-    @if (!stages.Any())
-    {
-        <div class="text-center py-5 text-muted">
-            <i class="bi bi-layers fs-1 d-block mb-3"></i>
-            <p>Нет этапов в смете</p>
-            <button class="btn btn-outline-primary" @onclick="AddStage">
-                Добавить первый этап
-            </button>
-        </div>
-    }
-    else
-    {
-        @foreach (var stage in stages.OrderBy(s => s.OrderIndex))
-        {
-            <div class="stage-card card shadow-sm mb-4">
-                <div class="card-header bg-light py-2" @onclick="() => ToggleStage(stage.Id)">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2 flex-grow-1">
-                            <span class="btn-collapse">
-                                <i class="bi @(GetStageExpanded(stage.Id) ? "bi-chevron-down" : "bi-chevron-right")"></i>
-                            </span>
-                            <span class="badge bg-secondary me-1">@(stages.OrderBy(s => s.OrderIndex).ToList().IndexOf(stage) + 1)</span>
-                            
-                            @if (editingStageId == stage.Id)
-                            {
-                                <input type="text" class="form-control form-control-sm" @bind="editingStageName" 
-                                       style="width: 300px;" @onkeydown="(e) => HandleStageEnter(e, stage)" 
-                                       @onclick:stopPropagation="true" />
-                                <button class="btn btn-sm btn-success" @onclick="() => SaveStage(stage)" @onclick:stopPropagation="true">✓</button>
-                                <button class="btn btn-sm btn-secondary" @onclick="CancelEditStage" @onclick:stopPropagation="true">✗</button>
-                            }
-                            else
-                            {
-                                <h6 class="mb-0 fw-bold">@stage.Name</h6>
-                                <button class="btn btn-sm btn-link py-0" @onclick="() => EditStage(stage)" @onclick:stopPropagation="true">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-link py-0 text-danger" @onclick="() => ShowDeleteStageModal(stage)" @onclick:stopPropagation="true">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            }
-                        </div>
-                        <div class="d-flex align-items-center gap-3" @onclick:stopPropagation="true">
-                            <span class="badge bg-light text-dark">💰 @GetStageTotal(stage.Id).ToString("N0") ₽</span>
-                            <span class="badge" style="background-color: #ffe0b5; color: #b45f06;">📈 @GetStageProfit(stage.Id).ToString("N0") ₽</span>
-                            <span class="badge bg-success text-white">📊 @GetStageCustomerTotal(stage.Id).ToString("N0") ₽</span>
-                        </div>
-                    </div>
+        <div class="stages-container">
+            @if (!stages.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-layers fs-1 d-block mb-3"></i>
+                    <p>Нет этапов в смете</p>
+                    <button class="btn btn-outline-primary" @onclick="AddStage">
+                        Добавить первый этап
+                    </button>
                 </div>
-
-                @if (GetStageExpanded(stage.Id))
+            }
+            else
+            {
+                @foreach (var stage in stages.OrderBy(s => s.OrderIndex))
                 {
-                    <div class="card-body p-3">
-                        <!-- Панель инструментов для этапа -->
-                        <div class="d-flex flex-wrap gap-2 mb-3">
-                            <button class="btn btn-primary btn-sm" @onclick="() => ShowAddItemDialog(stage.Id)">
-                                <i class="bi bi-plus-circle me-1"></i>+ позиция
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-download me-1"></i>Импорт данных
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-percent me-1"></i>% Наценки и скидки
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-book me-1"></i>Справочники
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-database me-1"></i>База расценок
-                            </button>
+                    <div class="stage-card card shadow-sm mb-4">
+                        <div class="card-header bg-light py-2" @onclick="() => ToggleStage(stage.Id)">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2 flex-grow-1">
+                                    <span class="btn-collapse">
+                                        <i class="bi @(GetStageExpanded(stage.Id) ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                                    </span>
+                                    <span class="badge bg-secondary me-1">@(stages.OrderBy(s => s.OrderIndex).ToList().IndexOf(stage) + 1)</span>
+                                    
+                                    @if (editingStageId == stage.Id)
+                                    {
+                                        <input type="text" class="form-control form-control-sm" @bind="editingStageName" 
+                                               style="width: 300px;" @onkeydown="(e) => HandleStageEnter(e, stage)" 
+                                               @onclick:stopPropagation="true" />
+                                        <button class="btn btn-sm btn-success" @onclick="() => SaveStage(stage)" @onclick:stopPropagation="true">✓</button>
+                                        <button class="btn btn-sm btn-secondary" @onclick="CancelEditStage" @onclick:stopPropagation="true">✗</button>
+                                    }
+                                    else
+                                    {
+                                        <h6 class="mb-0 fw-bold">@stage.Name</h6>
+                                        <button class="btn btn-sm btn-link py-0" @onclick="() => EditStage(stage)" @onclick:stopPropagation="true">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link py-0 text-danger" @onclick="() => ShowDeleteStageModal(stage)" @onclick:stopPropagation="true">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+                                <div class="d-flex align-items-center gap-3" @onclick:stopPropagation="true">
+                                    <span class="badge bg-light text-dark">💰 @GetStageTotal(stage.Id).ToString("N0") ₽</span>
+                                    <span class="badge" style="background-color: #ffe0b5; color: #b45f06;">📈 @GetStageProfit(stage.Id).ToString("N0") ₽</span>
+                                    <span class="badge bg-success text-white">📊 @GetStageCustomerTotal(stage.Id).ToString("N0") ₽</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Заголовок таблицы (только в этапе, не в группах) -->
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 30px"></th>
-                                        <th style="width: 60px">№</th>
-                                        <th style="width: 50px">Тип</th>
-                                        <th>Позиция</th>
-                                        <th style="width: 50px">Ед. изм.</th>
-                                        <th style="width: 70px">Кол-во</th>
-                                        <th style="width: 80px">Цена</th>
-                                        <th style="width: 90px">Стоимость</th>
-                                        <th style="width: 60px">Наценка %</th>
-                                        <th style="width: 80px">Цена для заказчика</th>
-                                        <th style="width: 90px">Стоимость для заказчика</th>
-                                        <th style="width: 40px"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @{
-                                        var stageGroups = groups.Where(g => g.StageId == stage.Id).OrderBy(g => g.OrderIndex).ToList();
-                                    }
+                        @if (GetStageExpanded(stage.Id))
+                        {
+                            <div class="card-body p-3">
+                                <!-- Панель инструментов для этапа -->
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <button class="btn btn-primary btn-sm" @onclick="() => ShowAddItemDialog(stage.Id)">
+                                        <i class="bi bi-plus-circle me-1"></i>+ позиция
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-download me-1"></i>Импорт данных
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-percent me-1"></i>% Наценки и скидки
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-book me-1"></i>Справочники
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-database me-1"></i>База расценок
+                                    </button>
+                                </div>
 
-                                    @foreach (var group in stageGroups)
-                                    {
-                                        <!-- Заголовок группы -->
-                                        <tr class="table-secondary">
-                                            <td colspan="12" class="p-0">
-                                                <div class="d-flex align-items-center py-1 px-2" @onclick="() => ToggleGroup(group.Id)" style="cursor: pointer;">
-                                                    <span class="btn-collapse me-2">
-                                                        <i class="bi @(GetGroupExpanded(group.Id) ? "bi-chevron-down" : "bi-chevron-right")"></i>
-                                                    </span>
-                                                    <span class="badge bg-info me-2">
-                                                        @(stages.OrderBy(s => s.OrderIndex).ToList().IndexOf(stage) + 1).@(stageGroups.IndexOf(group) + 1)
-                                                    </span>
-                                                    
-                                                    @if (editingGroupId == group.Id)
-                                                    {
-                                                        <input type="text" class="form-control form-control-sm" @bind="editingGroupName" 
-                                                               style="width: 250px;" @onkeydown="(e) => HandleGroupEnter(e, group)" 
-                                                               @onclick:stopPropagation="true" />
-                                                        <button class="btn btn-sm btn-success ms-2" @onclick="() => SaveGroup(group)" @onclick:stopPropagation="true">✓</button>
-                                                        <button class="btn btn-sm btn-secondary ms-1" @onclick="CancelEditGroup" @onclick:stopPropagation="true">✗</button>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="fw-bold me-2">@group.Name</span>
-                                                        <button class="btn btn-sm btn-link py-0" @onclick="() => EditGroup(group)" @onclick:stopPropagation="true">
-                                                            <i class="bi bi-pencil"></i>
-                                                        </button>
-                                                    }
-                                                    
-                                                    <span class="ms-auto me-3">
-                                                        <span class="badge bg-light text-dark me-2">💰 @GetGroupTotal(group.Id).ToString("N0") ₽</span>
-                                                        <span class="badge me-2" style="background-color: #ffe0b5; color: #b45f06;">📈 @GetGroupProfit(group.Id).ToString("N0") ₽</span>
-                                                        <span class="badge bg-success">📊 @GetGroupCustomerTotal(group.Id).ToString("N0") ₽</span>
-                                                    </span>
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                        @if (GetGroupExpanded(group.Id))
-                                        {
-                                            var groupItems = items.Where(i => i.GroupId == group.Id).OrderBy(i => i.OrderIndex).ToList();
-                                            @foreach (var item in groupItems)
-                                            {
-                                                var total = item.Price * item.Quantity;
-                                                var customerTotal = item.CustomerPrice * item.Quantity;
-                                                <tr data-type="@item.Type" class="@(selectedItems.Contains(item.Id) ? "table-primary" : "")">
-                                                    <td><input type="checkbox" @onchange="() => ToggleItemSelection(item.Id)" checked="@selectedItems.Contains(item.Id)" /></td>
-                                                    <td>
-                                                        @{
-                                                            int stageIdx = stages.OrderBy(s => s.OrderIndex).ToList().IndexOf(stage) + 1;
-                                                            int groupIdx = stageGroups.IndexOf(group) + 1;
-                                                            int itemIdx = groupItems.IndexOf(item) + 1;
-                                                        }
-                                                        @stageIdx.@groupIdx.@itemIdx
-                                                    </td>
-                                                    <td>
-                                                        <select class="form-select form-select-sm type-field" @bind="item.Type" @bind:event="oninput" @onblur="() => OnTypeChanged(item)">
-                                                            <option value="P">P</option>
-                                                            <option value="M">M</option>
-                                                            <option value="X">X</option>
-                                                            <option value="D">D</option>
-                                                        </select>
-                                                    </td>
-                                                    <td><input type="text" class="form-control form-control-sm" @bind="item.Name" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
-                                                    <td><input type="text" class="form-control form-control-sm" @bind="item.Unit" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
-                                                    <td><input type="number" class="form-control form-control-sm" @bind="item.Quantity" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
-                                                    <td><input type="number" class="form-control form-control-sm" @bind="item.Price" @bind:event="oninput" @onblur="() => OnPriceChanged(item)" /></td>
-                                                    <td class="fw-bold">@total.ToString("N0") ₽</td>
-                                                    <td><input type="number" class="form-control form-control-sm markup-field" @bind="item.Markup" @bind:event="oninput" @onblur="() => OnMarkupChanged(item)" /></td>
-                                                    <td><input type="number" class="form-control form-control-sm" @bind="item.CustomerPrice" @bind:event="oninput" @onblur="() => OnCustomerPriceChanged(item)" /></td>
-                                                    <td class="fw-bold text-success">@customerTotal.ToString("N0") ₽</td>
-                                                    <td><button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item.Id)"><i class="bi bi-trash"></i></button></td>
-                                                </tr>
-                                            }
-                                        }
-                                    }
-
-                                    <!-- Позиции без группы в этом этапе -->
-                                    @{
-                                        var ungroupedItems = items.Where(i => i.GroupId == null && i.StageId == stage.Id).OrderBy(i => i.OrderIndex).ToList();
-                                    }
-                                    @if (ungroupedItems.Any())
-                                    {
-                                        <tr class="table-secondary">
-                                            <td colspan="12" class="py-1 px-2">
-                                                <span class="fw-bold">Позиции без группы</span>
-                                            </td>
-                                        </tr>
-                                        @foreach (var item in ungroupedItems)
-                                        {
-                                            var total = item.Price * item.Quantity;
-                                            var customerTotal = item.CustomerPrice * item.Quantity;
-                                            <tr data-type="@item.Type" class="@(selectedItems.Contains(item.Id) ? "table-primary" : "")">
-                                                <td><input type="checkbox" @onchange="() => ToggleItemSelection(item.Id)" checked="@selectedItems.Contains(item.Id)" /></td>
-                                                <td>@(ungroupedItems.IndexOf(item) + 1)</td>
-                                                <td>
-                                                    <select class="form-select form-select-sm type-field" @bind="item.Type" @bind:event="oninput" @onblur="() => OnTypeChanged(item)">
-                                                        <option value="P">P</option>
-                                                        <option value="M">M</option>
-                                                        <option value="X">X</option>
-                                                        <option value="D">D</option>
-                                                    </select>
-                                                </td>
-                                                <td><input type="text" class="form-control form-control-sm" @bind="item.Name" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
-                                                <td><input type="text" class="form-control form-control-sm" @bind="item.Unit" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
-                                                <td><input type="number" class="form-control form-control-sm" @bind="item.Quantity" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
-                                                <td><input type="number" class="form-control form-control-sm" @bind="item.Price" @bind:event="oninput" @onblur="() => OnPriceChanged(item)" /></td>
-                                                <td class="fw-bold">@total.ToString("N0") ₽</td>
-                                                <td><input type="number" class="form-control form-control-sm markup-field" @bind="item.Markup" @bind:event="oninput" @onblur="() => OnMarkupChanged(item)" /></td>
-                                                <td><input type="number" class="form-control form-control-sm" @bind="item.CustomerPrice" @bind:event="oninput" @onblur="() => OnCustomerPriceChanged(item)" /></td>
-                                                <td class="fw-bold text-success">@customerTotal.ToString("N0") ₽</td>
-                                                <td><button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item.Id)"><i class="bi bi-trash"></i></button></td>
+                                <!-- Таблица позиций -->
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 30px"></th>
+                                                <th style="width: 60px">№</th>
+                                                <th style="width: 50px">Тип</th>
+                                                <th>Позиция</th>
+                                                <th style="width: 50px">Ед. изм.</th>
+                                                <th style="width: 70px">Кол-во</th>
+                                                <th style="width: 80px">Цена</th>
+                                                <th style="width: 90px">Стоимость</th>
+                                                <th style="width: 60px">Наценка %</th>
+                                                <th style="width: 80px">Цена для заказчика</th>
+                                                <th style="width: 90px">Стоимость для заказчика</th>
+                                                <th style="width: 40px"></th>
                                             </tr>
-                                        }
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
+                                        </thead>
+                                        <tbody>
+                                            @{
+                                                var stageGroups = groups.Where(g => g.StageId == stage.Id).OrderBy(g => g.OrderIndex).ToList();
+                                            }
+
+                                            @foreach (var group in stageGroups)
+                                            {
+                                                <!-- Заголовок группы -->
+                                                <tr class="table-secondary">
+                                                    <td colspan="12" class="p-0">
+                                                        <div class="d-flex align-items-center py-1 px-2" @onclick="() => ToggleGroup(group.Id)" style="cursor: pointer;">
+                                                            <span class="btn-collapse me-2">
+                                                                <i class="bi @(GetGroupExpanded(group.Id) ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                                                            </span>
+                                                            <span class="badge bg-info me-2">
+                                                                @(stages.OrderBy(s => s.OrderIndex).ToList().IndexOf(stage) + 1).@(stageGroups.IndexOf(group) + 1)
+                                                            </span>
+                                                            
+                                                            @if (editingGroupId == group.Id)
+                                                            {
+                                                                <input type="text" class="form-control form-control-sm" @bind="editingGroupName" 
+                                                                       style="width: 250px;" @onkeydown="(e) => HandleGroupEnter(e, group)" 
+                                                                       @onclick:stopPropagation="true" />
+                                                                <button class="btn btn-sm btn-success ms-2" @onclick="() => SaveGroup(group)" @onclick:stopPropagation="true">✓</button>
+                                                                <button class="btn btn-sm btn-secondary ms-1" @onclick="CancelEditGroup" @onclick:stopPropagation="true">✗</button>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="fw-bold me-2">@group.Name</span>
+                                                                <button class="btn btn-sm btn-link py-0" @onclick="() => EditGroup(group)" @onclick:stopPropagation="true">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </button>
+                                                            }
+                                                            
+                                                            <span class="ms-auto me-3">
+                                                                <span class="badge bg-light text-dark me-2">💰 @GetGroupTotal(group.Id).ToString("N0") ₽</span>
+                                                                <span class="badge me-2" style="background-color: #ffe0b5; color: #b45f06;">📈 @GetGroupProfit(group.Id).ToString("N0") ₽</span>
+                                                                <span class="badge bg-success">📊 @GetGroupCustomerTotal(group.Id).ToString("N0") ₽</span>
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+
+                                                @if (GetGroupExpanded(group.Id))
+                                                {
+                                                    var groupItems = items.Where(i => i.GroupId == group.Id).OrderBy(i => i.OrderIndex).ToList();
+                                                    @foreach (var item in groupItems)
+                                                    {
+                                                        var total = item.Price * item.Quantity;
+                                                        var customerTotal = item.CustomerPrice * item.Quantity;
+                                                        <tr data-type="@item.Type" class="@(selectedItems.Contains(item.Id) ? "table-primary" : "")">
+                                                            <td><input type="checkbox" @onchange="() => ToggleItemSelection(item.Id)" checked="@selectedItems.Contains(item.Id)" /></td>
+                                                            <td>
+                                                                @{
+                                                                    int stageIdx = stages.OrderBy(s => s.OrderIndex).ToList().IndexOf(stage) + 1;
+                                                                    int groupIdx = stageGroups.IndexOf(group) + 1;
+                                                                    int itemIdx = groupItems.IndexOf(item) + 1;
+                                                                }
+                                                                @stageIdx.@groupIdx.@itemIdx
+                                                            </td>
+                                                            <td>
+                                                                <select class="form-select form-select-sm type-field" @bind="item.Type" @bind:event="oninput" @onblur="() => OnTypeChanged(item)">
+                                                                    <option value="P">P</option>
+                                                                    <option value="M">M</option>
+                                                                    <option value="X">X</option>
+                                                                    <option value="D">D</option>
+                                                                </select>
+                                                            </td>
+                                                            <td><input type="text" class="form-control form-control-sm" @bind="item.Name" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
+                                                            <td><input type="text" class="form-control form-control-sm" @bind="item.Unit" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
+                                                            <td><input type="number" class="form-control form-control-sm" @bind="item.Quantity" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
+                                                            <td><input type="number" class="form-control form-control-sm" @bind="item.Price" @bind:event="oninput" @onblur="() => OnPriceChanged(item)" /></td>
+                                                            <td class="fw-bold">@total.ToString("N0") ₽</td>
+                                                            <td><input type="number" class="form-control form-control-sm markup-field" @bind="item.Markup" @bind:event="oninput" @onblur="() => OnMarkupChanged(item)" /></td>
+                                                            <td><input type="number" class="form-control form-control-sm" @bind="item.CustomerPrice" @bind:event="oninput" @onblur="() => OnCustomerPriceChanged(item)" /></td>
+                                                            <td class="fw-bold text-success">@customerTotal.ToString("N0") ₽</td>
+                                                            <td><button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item.Id)"><i class="bi bi-trash"></i></button></td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            }
+
+                                            <!-- ========== ПОЗИЦИИ БЕЗ ГРУППЫ ========== -->
+                                            @{
+                                                var ungroupedItems = items.Where(i => i.GroupId == null && i.StageId == stage.Id).OrderBy(i => i.OrderIndex).ToList();
+                                            }
+                                            @if (ungroupedItems.Any())
+                                            {
+                                                <tr class="table-secondary">
+                                                    <td colspan="12" class="py-1 px-2">
+                                                        <span class="fw-bold">Позиции без группы</span>
+                                                    </td>
+                                                </tr>
+                                                @foreach (var item in ungroupedItems)
+                                                {
+                                                    var total = item.Price * item.Quantity;
+                                                    var customerTotal = item.CustomerPrice * item.Quantity;
+                                                    <tr data-type="@item.Type" class="@(selectedItems.Contains(item.Id) ? "table-primary" : "")">
+                                                        <td><input type="checkbox" @onchange="() => ToggleItemSelection(item.Id)" checked="@selectedItems.Contains(item.Id)" /></td>
+                                                        <td>@(ungroupedItems.IndexOf(item) + 1)</td>
+                                                        <td>
+                                                            <select class="form-select form-select-sm type-field" @bind="item.Type" @bind:event="oninput" @onblur="() => OnTypeChanged(item)">
+                                                                <option value="P">P</option>
+                                                                <option value="M">M</option>
+                                                                <option value="X">X</option>
+                                                                <option value="D">D</option>
+                                                            </select>
+                                                        </td>
+                                                        <td><input type="text" class="form-control form-control-sm" @bind="item.Name" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
+                                                        <td><input type="text" class="form-control form-control-sm" @bind="item.Unit" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
+                                                        <td><input type="number" class="form-control form-control-sm" @bind="item.Quantity" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
+                                                        <td><input type="number" class="form-control form-control-sm" @bind="item.Price" @bind:event="oninput" @onblur="() => OnPriceChanged(item)" /></td>
+                                                        <td class="fw-bold">@total.ToString("N0") ₽</td>
+                                                        <td><input type="number" class="form-control form-control-sm markup-field" @bind="item.Markup" @bind:event="oninput" @onblur="() => OnMarkupChanged(item)" /></td>
+                                                        <td><input type="number" class="form-control form-control-sm" @bind="item.CustomerPrice" @bind:event="oninput" @onblur="() => OnCustomerPriceChanged(item)" /></td>
+                                                        <td class="fw-bold text-success">@customerTotal.ToString("N0") ₽</td>
+                                                        <td><button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item.Id)"><i class="bi bi-trash"></i></button></td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
-            </div>
-        }
-        
-        <!-- Кнопка добавления нового этапа -->
-        <div class="text-center mt-4">
-            <button class="btn btn-outline-primary btn-lg" @onclick="AddStage">
-                <i class="bi bi-plus-circle me-2"></i>Добавить этап
-            </button>
+                
+                <!-- Кнопка добавления нового этапа -->
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-primary btn-lg" @onclick="AddStage">
+                        <i class="bi bi-plus-circle me-2"></i>Добавить этап
+                    </button>
+                </div>
+            }
         </div>
-    }
-</div>
 
         <!-- Нижний колонтитул с выбранными позициями -->
         @if (selectedItems.Any())
@@ -458,7 +445,7 @@
                                 <i class="bi bi-folder-plus me-1"></i>В группу
                             </button>
 
-                            <!-- Кнопка Копировать с выпадающим списком (раскрытие вверх) -->
+                            <!-- Кнопка Копировать с выпадающим списком -->
                             <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
                                 <button class="btn btn-sm btn-outline-primary" @onclick="ToggleCopyDropdown" style="display: inline-flex; align-items: center;">
                                     <i class="bi bi-files me-1"></i>Копировать
@@ -485,7 +472,7 @@
                                 }
                             </div>
 
-                            <!-- Кнопка Переместить с выпадающим списком (раскрытие вверх) -->
+                            <!-- Кнопка Переместить с выпадающим списком -->
                             <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="ToggleMoveDropdown" style="display: inline-flex; align-items: center;">
                                     <i class="bi bi-folder-plus me-1"></i>Переместить
@@ -981,29 +968,10 @@
     private string editingGroupName = "";
     private bool showAddDialog = false;
     private NewItem newItem = new();
-private decimal GetGroupTotal(int groupId)
-{
-    return items.Where(i => i.GroupId == groupId).Sum(i => i.Price * i.Quantity);
-}
 
-private decimal GetGroupCustomerTotal(int groupId)
-{
-    return items.Where(i => i.GroupId == groupId).Sum(i => i.CustomerPrice * i.Quantity);
-}
-
-private decimal GetGroupProfit(int groupId)
-{
-    return GetGroupCustomerTotal(groupId) - GetGroupTotal(groupId);
-}
     // Поле для общего сворачивания блока стоимости
     private bool expandedCostSection = true;
 
-    private void ToggleCostSection()
-    {
-        expandedCostSection = !expandedCostSection;
-        StateHasChanged();
-    }
-    
     // Поля для модального окна редактирования сметы
     private bool showEditModal = false;
     private bool isSavingEdit = false;
@@ -1035,6 +1003,37 @@ private decimal GetGroupProfit(int groupId)
         public string Type { get; set; } = "P";
         public int? StageId { get; set; }
         public int? GroupId { get; set; }
+    }
+
+    // ВСПОМОГАТЕЛЬНЫЙ МЕТОД для уведомлений
+    private async Task NotifyChanges()
+    {
+        if (estimate != null)
+        {
+            await DataSyncService.NotifyEstimateChanged(Id);
+            await DataSyncService.NotifyObjectChanged(estimate.ConstructionObjectId);
+        }
+    }
+
+    private decimal GetGroupTotal(int groupId)
+    {
+        return items.Where(i => i.GroupId == groupId).Sum(i => i.Price * i.Quantity);
+    }
+
+    private decimal GetGroupCustomerTotal(int groupId)
+    {
+        return items.Where(i => i.GroupId == groupId).Sum(i => i.CustomerPrice * i.Quantity);
+    }
+
+    private decimal GetGroupProfit(int groupId)
+    {
+        return GetGroupCustomerTotal(groupId) - GetGroupTotal(groupId);
+    }
+
+    private void ToggleCostSection()
+    {
+        expandedCostSection = !expandedCostSection;
+        StateHasChanged();
     }
 
     private async Task SetStatusDraft() => await ChangeStatus("Черновик");
@@ -1086,7 +1085,16 @@ private decimal GetGroupProfit(int groupId)
                 Console.WriteLine($"Загружено групп: {groups.Count}");
 
                 items = await Http.GetFromJsonAsync<List<EstimateItem>>($"http://localhost:5050/api/EstimateItems/by-estimate/{Id}") ?? new();
+                
+                // Логируем статистику по позициям
+                var itemsWithStage = items.Count(i => i.StageId != null);
+                var itemsWithoutStage = items.Count(i => i.StageId == null);
+                var itemsInGroups = items.Count(i => i.GroupId != null);
+                
                 Console.WriteLine($"=== ЗАГРУЖЕНО ПОЗИЦИЙ: {items.Count} для сметы {Id} ===");
+                Console.WriteLine($"   - С StageId: {itemsWithStage}");
+                Console.WriteLine($"   - Без StageId: {itemsWithoutStage}");
+                Console.WriteLine($"   - В группах: {itemsInGroups}");
             }
         }
         catch (Exception ex)
@@ -1146,6 +1154,9 @@ private decimal GetGroupProfit(int groupId)
             };
 
             await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItems/{item.Id}", update);
+            
+            await NotifyChanges();
+            
             isSaving = false;
             StateHasChanged();
         }
@@ -1195,6 +1206,9 @@ private decimal GetGroupProfit(int groupId)
             };
 
             await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItems/{item.Id}", update);
+            
+            await NotifyChanges();
+            
             isSaving = false;
             StateHasChanged();
         }
@@ -1231,7 +1245,7 @@ private decimal GetGroupProfit(int groupId)
                 {
                     stages.Add(created);
                     stageExpandedState[created.Id] = true;
-                    NotificationService.NotifyDataChanged();
+                    await NotifyChanges();
                 }
             }
         }
@@ -1282,7 +1296,6 @@ private decimal GetGroupProfit(int groupId)
             isSaving = true;
             StateHasChanged();
 
-            // Создаем новую группу - правильная структура для API
             var newGroup = new
             {
                 stageId = newItem.StageId.Value,
@@ -1300,10 +1313,7 @@ private decimal GetGroupProfit(int groupId)
                 var createdGroup = await response.Content.ReadFromJsonAsync<EstimateItemGroup>();
                 if (createdGroup != null)
                 {
-                    // Добавляем группу в локальный список
                     groups.Add(createdGroup);
-                    
-                    // Устанавливаем созданную группу для новой позиции
                     newItem.GroupId = createdGroup.Id;
                     isCreatingNewGroupInAdd = false;
                     newGroupNameInAdd = "";
@@ -1339,7 +1349,6 @@ private decimal GetGroupProfit(int groupId)
             return;
         }
 
-        // Проверяем, выбран ли пункт "Новая группа"
         if (newItem.GroupId == -1)
         {
             isCreatingNewGroupInAdd = true;
@@ -1377,21 +1386,17 @@ private decimal GetGroupProfit(int groupId)
                 var createdItem = await response.Content.ReadFromJsonAsync<EstimateItem>();
                 if (createdItem != null)
                 {
-                    // Добавляем позицию в локальный список
                     items.Add(createdItem);
                     Console.WriteLine($"✅ Позиция добавлена с ID: {createdItem.Id}");
                     
-                    // Принудительно обновляем состояние
                     StateHasChanged();
                 }
                 
                 CloseAddDialog();
-                
-                // Перезагружаем данные для синхронизации
                 await LoadData();
+                await NotifyChanges();
                 
                 await JS.InvokeVoidAsync("alert", "✅ Позиция успешно добавлена!");
-                NotificationService.NotifyDataChanged();
             }
             else
             {
@@ -1430,6 +1435,7 @@ private decimal GetGroupProfit(int groupId)
             await Http.DeleteAsync($"http://localhost:5050/api/EstimateItems/{itemId}");
             await LoadData();
             selectedItems.Remove(itemId);
+            await NotifyChanges();
             StateHasChanged();
         }
     }
@@ -1444,6 +1450,7 @@ private decimal GetGroupProfit(int groupId)
             
             await LoadData();
             selectedItems.Clear();
+            await NotifyChanges();
             StateHasChanged();
         }
     }
@@ -1478,7 +1485,7 @@ private decimal GetGroupProfit(int groupId)
                 if (response.IsSuccessStatusCode)
                 {
                     stage.Name = editingStageName;
-                    NotificationService.NotifyDataChanged();
+                    await NotifyChanges();
                 }
             }
             catch (Exception ex)
@@ -1525,7 +1532,7 @@ private decimal GetGroupProfit(int groupId)
             group.Name = editingGroupName;
             var update = new { group.Id, name = editingGroupName, orderIndex = group.OrderIndex, stageId = group.StageId, isExpanded = group.IsExpanded };
             await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItemGroups/{group.Id}", update);
-            NotificationService.NotifyDataChanged();
+            await NotifyChanges();
         }
         CancelEditGroup();
     }
@@ -1543,7 +1550,6 @@ private decimal GetGroupProfit(int groupId)
             await SaveGroup(group);
     }
 
-    // Методы для группирования
     private async Task ShowGroupModal()
     {
         if (selectedItems.Count == 0)
@@ -1552,7 +1558,6 @@ private decimal GetGroupProfit(int groupId)
             return;
         }
 
-        // Проверяем, есть ли выбранные позиции уже в группах
         var itemsInGroups = items.Where(i => selectedItems.Contains(i.Id) && i.GroupId.HasValue).ToList();
         
         if (itemsInGroups.Any())
@@ -1601,10 +1606,8 @@ private decimal GetGroupProfit(int groupId)
             isSaving = true;
             StateHasChanged();
 
-            // Используем выбранный этап
             int targetStageId = selectedGroupStageId.Value;
 
-            // Создаем новую группу - правильная структура для API
             var newGroup = new
             {
                 stageId = targetStageId,
@@ -1624,7 +1627,6 @@ private decimal GetGroupProfit(int groupId)
                 {
                     Console.WriteLine($"✅ Группа создана с ID: {createdGroup.Id}");
                     
-                    // Перемещаем выбранные позиции в новую группу
                     var orders = selectedItems.Select((id, index) => new
                     {
                         id = id,
@@ -1639,9 +1641,9 @@ private decimal GetGroupProfit(int groupId)
                         await LoadData();
                         selectedItems.Clear();
                         CloseGroupModal();
+                        await NotifyChanges();
                         
                         await JS.InvokeVoidAsync("alert", $"✅ Группа '{newGroupName}' создана, {selectedItems.Count} позиций перемещено");
-                        NotificationService.NotifyDataChanged();
                     }
                     else
                     {
@@ -1670,7 +1672,6 @@ private decimal GetGroupProfit(int groupId)
         }
     }
 
-    // Методы для выпадающих списков
     private void ToggleCopyDropdown()
     {
         showCopyDropdown = !showCopyDropdown;
@@ -1692,21 +1693,17 @@ private decimal GetGroupProfit(int groupId)
         StateHasChanged();
     }
 
-    // Методы для копирования/перемещения
     private void ShowCopyMoveModal(string target, string mode)
     {
-        // Закрываем dropdowns
         showCopyDropdown = false;
         showMoveDropdown = false;
         
         copyMoveMode = mode;
         copyMoveTarget = target;
         
-        // ВАЖНО: Сбрасываем значения перед определением
         currentStageId = null;
         currentGroupId = null;
         
-        // Определяем текущую группу и этап для первого выбранного элемента
         if (selectedItems.Any())
         {
             var firstItem = items.First(i => selectedItems.Contains(i.Id));
@@ -1715,22 +1712,15 @@ private decimal GetGroupProfit(int groupId)
                 currentStageId = firstItem.StageId;
                 currentGroupId = firstItem.GroupId;
                 Console.WriteLine($"ShowCopyMoveModal: Текущий этап установлен: {currentStageId}, текущая группа: {currentGroupId}");
-                Console.WriteLine($"Первая позиция: ID={firstItem.Id}, Name={firstItem.Name}, StageId={firstItem.StageId}, GroupId={firstItem.GroupId}");
             }
-        }
-        else
-        {
-            Console.WriteLine("ShowCopyMoveModal: Нет выбранных элементов");
         }
 
         if (target == "same" && mode == "copy")
         {
-            // Копирование в ту же группу - выполняем сразу без модального окна
             _ = ExecuteCopyMoveSame();
             return;
         }
 
-        // Формируем заголовок
         string action = mode == "copy" ? "Копирование" : "Перемещение";
         string targetText = target switch
         {
@@ -1761,7 +1751,6 @@ private decimal GetGroupProfit(int groupId)
 
             foreach (var item in itemsToProcess)
             {
-                // Копирование в ту же группу - создаем новую позицию с теми же параметрами
                 var newItem = new
                 {
                     EstimateId = Id,
@@ -1781,9 +1770,9 @@ private decimal GetGroupProfit(int groupId)
 
             await LoadData();
             selectedItems.Clear();
+            await NotifyChanges();
             
             await JS.InvokeVoidAsync("alert", $"✅ {itemsToProcess.Count} позиций скопировано");
-            NotificationService.NotifyDataChanged();
         }
         catch (Exception ex)
         {
@@ -1837,7 +1826,6 @@ private decimal GetGroupProfit(int groupId)
             isSaving = true;
             StateHasChanged();
 
-            // Определяем этап для новой группы
             int targetStageId;
             
             if (copyMoveTarget == "stage" && selectedTargetStageId.HasValue)
@@ -1860,7 +1848,6 @@ private decimal GetGroupProfit(int groupId)
 
             Console.WriteLine($"Создание группы в диалоге копирования: stageId={targetStageId}, name={newGroupName}");
 
-            // Создаем новую группу - правильная структура для API
             var newGroup = new
             {
                 stageId = targetStageId,
@@ -1876,10 +1863,7 @@ private decimal GetGroupProfit(int groupId)
                 var createdGroup = await response.Content.ReadFromJsonAsync<EstimateItemGroup>();
                 if (createdGroup != null)
                 {
-                    // Добавляем группу в локальный список
                     groups.Add(createdGroup);
-                    
-                    // Устанавливаем созданную группу как целевую
                     selectedTargetGroupId = createdGroup.Id;
                     isCreatingNewGroup = false;
                     newGroupName = "";
@@ -1917,7 +1901,6 @@ private decimal GetGroupProfit(int groupId)
             var itemsToProcess = items.Where(i => selectedItems.Contains(i.Id)).ToList();
             var isCopy = copyMoveMode == "copy";
 
-            // Если мы в режиме создания новой группы, но группа еще не создана
             if (isCreatingNewGroup)
             {
                 await JS.InvokeVoidAsync("alert", "Сначала создайте группу");
@@ -1930,7 +1913,6 @@ private decimal GetGroupProfit(int groupId)
             
             foreach (var item in itemsToProcess)
             {
-                // Определяем целевые StageId и GroupId
                 int targetStageId;
                 int? targetGroupId = selectedTargetGroupId;
 
@@ -1941,7 +1923,6 @@ private decimal GetGroupProfit(int groupId)
                 }
                 else if (copyMoveTarget == "group" && currentStageId.HasValue)
                 {
-                    // Текущий этап
                     targetStageId = currentStageId.Value;
                     Console.WriteLine($"Копирование в текущий этап: {targetStageId}");
                 }
@@ -1953,7 +1934,6 @@ private decimal GetGroupProfit(int groupId)
 
                 if (isCopy)
                 {
-                    // Копирование - создаем новую позицию
                     var newItem = new
                     {
                         EstimateId = Id,
@@ -1985,7 +1965,6 @@ private decimal GetGroupProfit(int groupId)
                 }
                 else
                 {
-                    // Перемещение - обновляем существующую позицию
                     var updateItem = new
                     {
                         item.Id,
@@ -2019,6 +1998,7 @@ private decimal GetGroupProfit(int groupId)
             await LoadData();
             selectedItems.Clear();
             CloseCopyMoveModal();
+            await NotifyChanges();
             
             if (processedCount > 0)
             {
@@ -2031,8 +2011,6 @@ private decimal GetGroupProfit(int groupId)
             {
                 await JS.InvokeVoidAsync("alert", "❌ Ни одна позиция не была обработана");
             }
-            
-            NotificationService.NotifyDataChanged();
         }
         catch (Exception ex)
         {
@@ -2046,7 +2024,6 @@ private decimal GetGroupProfit(int groupId)
         }
     }
 
-    // Методы для статусного dropdown
     private void ToggleStatusDropdown()
     {
         showStatusDropdown = !showStatusDropdown;
@@ -2062,10 +2039,9 @@ private decimal GetGroupProfit(int groupId)
         }
     }
 
-    // Метод для изменения статуса сметы
     private async Task ChangeStatus(string newStatus)
     {
-        showStatusDropdown = false; // Закрываем dropdown
+        showStatusDropdown = false;
         
         if (estimate == null || estimate.Status == newStatus)
             return;
@@ -2093,8 +2069,7 @@ private decimal GetGroupProfit(int groupId)
             if (response.IsSuccessStatusCode)
             {
                 estimate.Status = newStatus;
-                Console.WriteLine($"✅ Статус изменен на: {newStatus}");
-                NotificationService.NotifyDataChanged();
+                await NotifyChanges();
                 StateHasChanged();
             }
             else
@@ -2114,7 +2089,6 @@ private decimal GetGroupProfit(int groupId)
         }
     }
 
-    // Методы для удаления этапа
     private void ShowDeleteStageModal(EstimateStage stage)
     {
         stageToDelete = stage;
@@ -2142,7 +2116,6 @@ private decimal GetGroupProfit(int groupId)
 
             Console.WriteLine($"Удаление этапа ID: {stageToDelete.Id}");
 
-            // Удаляем все позиции этапа
             var stageItems = items.Where(i => i.StageId == stageToDelete.Id).ToList();
             Console.WriteLine($"Позиций для удаления: {stageItems.Count}");
             
@@ -2151,7 +2124,6 @@ private decimal GetGroupProfit(int groupId)
                 await Http.DeleteAsync($"http://localhost:5050/api/EstimateItems/{item.Id}");
             }
 
-            // Удаляем группы этапа
             var stageGroups = groups.Where(g => g.StageId == stageToDelete.Id).ToList();
             Console.WriteLine($"Групп для удаления: {stageGroups.Count}");
             
@@ -2160,23 +2132,18 @@ private decimal GetGroupProfit(int groupId)
                 await Http.DeleteAsync($"http://localhost:5050/api/EstimateItemGroups/{group.Id}");
             }
 
-            // Удаляем сам этап
             var response = await Http.DeleteAsync($"http://localhost:5050/api/EstimateStages/{stageToDelete.Id}");
 
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"✅ Этап {stageToDelete.Id} удален из БД");
                 
-                // Перезагружаем все данные
                 await LoadData();
-                
-                // Очищаем выбранные элементы
                 selectedItems.Clear();
-                
                 CloseDeleteStageModal();
+                await NotifyChanges();
                 
                 await JS.InvokeVoidAsync("alert", $"✅ Этап '{stageToDelete.Name}' удален");
-                NotificationService.NotifyDataChanged();
             }
             else
             {
@@ -2197,7 +2164,6 @@ private decimal GetGroupProfit(int groupId)
         }
     }
 
-    // Методы для модального окна редактирования сметы
     private void OpenEditModal()
     {
         if (estimate != null)
@@ -2258,8 +2224,8 @@ private decimal GetGroupProfit(int groupId)
                     estimate.ManagerEmail = editManagerEmail;
                 }
 
+                await NotifyChanges();
                 await JS.InvokeVoidAsync("alert", "✅ Изменения сохранены!");
-                NotificationService.NotifyDataChanged();
                 CloseEditModal();
                 StateHasChanged();
             }

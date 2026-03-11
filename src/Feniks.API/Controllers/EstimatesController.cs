@@ -102,4 +102,31 @@ public class EstimatesController : ControllerBase
     {
         return _context.Estimates.Any(e => e.Id == id);
     }
+    [HttpPost("recalculate-all")]
+public async Task<IActionResult> RecalculateAllEstimates()
+{
+    var estimates = await _context.Estimates.ToListAsync();
+    var count = 0;
+    
+    foreach (var estimate in estimates)
+    {
+        var items = await _context.EstimateItems
+            .Where(i => i.EstimateId == estimate.Id)
+            .ToListAsync();
+        
+        var newTotalCost = items.Sum(i => i.Price * i.Quantity);
+        var newCustomerPrice = items.Sum(i => i.CustomerPrice * i.Quantity);
+        
+        if (estimate.TotalCost != newTotalCost || estimate.CustomerPrice != newCustomerPrice)
+        {
+            estimate.TotalCost = newTotalCost;
+            estimate.CustomerPrice = newCustomerPrice;
+            count++;
+        }
+    }
+    
+    await _context.SaveChangesAsync();
+    
+    return Ok(new { message = $"Пересчитано {count} смет из {estimates.Count}" });
+}
 }

@@ -107,19 +107,24 @@ public class EstimateStagesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteStage(int id)
     {
-        var stage = await _context.EstimateStages.FindAsync(id);
+        var stage = await _context.EstimateStages
+            .Include(s => s.Groups)
+            .Include(s => s.Items)
+            .FirstOrDefaultAsync(s => s.Id == id);
+        
         if (stage == null) return NotFound();
+        
+        var estimateId = stage.EstimateId;
         
         _context.EstimateStages.Remove(stage);
         await _context.SaveChangesAsync();
+        
+        // Пересчитываем итоги сметы
+        await RecalculateEstimate(estimateId);
+        
         return NoContent();
     }
     
-    private bool StageExists(int id)
-    {
-        return _context.EstimateStages.Any(e => e.Id == id);
-    }
-
     [HttpGet("{id}/with-items")]
     public async Task<ActionResult<object>> GetStageWithItems(int id)
     {
@@ -159,5 +164,28 @@ public class EstimateStagesController : ControllerBase
                 i.CustomerPrice
             })
         });
+    }
+    
+    private bool StageExists(int id)
+    {
+        return _context.EstimateStages.Any(e => e.Id == id);
+    }
+    
+    // Вспомогательный метод для пересчета итогов сметы
+    private async Task RecalculateEstimate(int estimateId)
+    {
+        var estimate = await _context.Estimates.FindAsync(estimateId);
+        if (estimate == null) return;
+        
+        var items = await _context.EstimateItems
+            .Where(i => i.EstimateId == estimateId)
+            .ToListAsync();
+        
+        estimate.TotalCost = items.Sum(i => i.Price * i.Quantity);
+        estimate.CustomerPrice = items.Sum(i => i.CustomerPrice * i.Quantity);
+        
+        await _context.SaveChangesAsync();
+        
+        Console.WriteLine($"✅ Пересчитана смета {estimateId} после удаления этапа: TotalCost={estimate.TotalCost}, CustomerPrice={estimate.CustomerPrice}");
     }
 }

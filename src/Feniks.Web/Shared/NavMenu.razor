@@ -1,9 +1,11 @@
 ﻿@using Feniks.Shared.Models
+@using Feniks.Web.Services
 @implements IDisposable
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject NotificationService NotificationService
+@inject DataSyncService DataSyncService
 
 <div class="sidebar-wrapper">
     <div class="sidebar-header">
@@ -132,13 +134,20 @@
     private int? activeEstimateId;
     private int? lastClickedObjectId;
 
+    protected override void OnInitialized()
+    {
+        // Подписываемся на события
+        Navigation.LocationChanged += OnLocationChanged;
+        NotificationService.OnDataChanged += HandleDataChanged;
+        DataSyncService.OnEstimateChanged += HandleAnyDataChanged;
+        DataSyncService.OnObjectChanged += HandleAnyDataChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadExpandedState();
         await LoadData();
         DetermineActiveItems();
-        Navigation.LocationChanged += OnLocationChanged;
-        NotificationService.OnDataChanged += RefreshData;
     }
 
     protected override void OnParametersSet()
@@ -153,11 +162,23 @@
         StateHasChanged();
     }
 
-    private async void RefreshData()
+    private async void HandleDataChanged()
     {
         Console.WriteLine("🔄 NavMenu: получено уведомление об изменении данных");
-        await LoadData();
-        StateHasChanged();
+        await InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
+    }
+
+    private async Task HandleAnyDataChanged(int id)
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
     }
 
     private void DetermineActiveItems()
@@ -277,7 +298,9 @@
     public void Dispose()
     {
         Navigation.LocationChanged -= OnLocationChanged;
-        NotificationService.OnDataChanged -= RefreshData;
+        NotificationService.OnDataChanged -= HandleDataChanged;
+        DataSyncService.OnEstimateChanged -= HandleAnyDataChanged;
+        DataSyncService.OnObjectChanged -= HandleAnyDataChanged;
     }
 
     private async Task LoadData()

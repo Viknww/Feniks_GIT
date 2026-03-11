@@ -16,7 +16,8 @@ builder.Services.AddScoped<RefCatalogService>();
 builder.Services.AddScoped<ReferenceService>();
 builder.Services.AddScoped<ReferenceItemService>();
 
-// Добавляем недостающий сервис
+// Обновленные сервисы
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<DataSyncService>(); // НОВЫЙ сервис
 
 await builder.Build().RunAsync();

@@ -138,8 +138,13 @@ public class EstimateItemGroupsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteGroup(int id)
     {
-        var group = await _context.EstimateItemGroups.FindAsync(id);
+        var group = await _context.EstimateItemGroups
+            .Include(g => g.Stage)
+            .FirstOrDefaultAsync(g => g.Id == id);
+            
         if (group == null) return NotFound();
+
+        int? estimateId = group.Stage?.EstimateId;
 
         // Обнуляем GroupId у позиций в группе
         var itemsInGroup = await _context.EstimateItems.Where(i => i.GroupId == id).ToListAsync();
@@ -150,11 +155,36 @@ public class EstimateItemGroupsController : ControllerBase
 
         _context.EstimateItemGroups.Remove(group);
         await _context.SaveChangesAsync();
+        
+        // Пересчитываем итоги сметы
+        if (estimateId.HasValue)
+        {
+            await RecalculateEstimate(estimateId.Value);
+        }
+        
         return NoContent();
     }
 
     private bool GroupExists(int id)
     {
         return _context.EstimateItemGroups.Any(e => e.Id == id);
+    }
+    
+    // Вспомогательный метод для пересчета итогов сметы
+    private async Task RecalculateEstimate(int estimateId)
+    {
+        var estimate = await _context.Estimates.FindAsync(estimateId);
+        if (estimate == null) return;
+        
+        var items = await _context.EstimateItems
+            .Where(i => i.EstimateId == estimateId)
+            .ToListAsync();
+        
+        estimate.TotalCost = items.Sum(i => i.Price * i.Quantity);
+        estimate.CustomerPrice = items.Sum(i => i.CustomerPrice * i.Quantity);
+        
+        await _context.SaveChangesAsync();
+        
+        Console.WriteLine($"✅ Пересчитана смета {estimateId} после удаления группы: TotalCost={estimate.TotalCost}, CustomerPrice={estimate.CustomerPrice}");
     }
 }

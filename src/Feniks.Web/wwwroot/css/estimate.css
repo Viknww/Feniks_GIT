@@ -865,3 +865,77 @@ tr.table-primary td:first-child {
 .dropdown-item:active {
     background-color: #e7f1ff;
 }
+/* Стили для кнопки статуса (в стиле соседних кнопок) */
+.status-btn {
+    min-width: 100px;
+    border-radius: 0.25rem !important;
+    color: white !important;
+    border: none !important;
+    transition: all 0.3s ease;
+}
+
+/* Цвета для разных статусов с прозрачностью 90% */
+.status-btn.status-draft {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.9) 0%, rgba(75, 85, 99, 0.9) 100%) !important;
+}
+
+.status-btn.status-approval {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%) !important;
+}
+
+.status-btn.status-inprogress {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(217, 119, 6, 0.9) 100%) !important;
+}
+
+.status-btn.status-completed {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%) !important;
+}
+
+/* При hover увеличиваем непрозрачность до 95% */
+.status-btn.status-draft:hover {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.95) 0%, rgba(75, 85, 99, 0.95) 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.status-btn.status-approval:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.status-btn.status-inprogress:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(217, 119, 6, 0.95) 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.status-btn.status-completed:hover {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Стрелка dropdown */
+.status-btn.dropdown-toggle::after {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Выпадающее меню */
+.dropdown-menu {
+    border-radius: 0.25rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 0.5rem 0;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    padding-left: 1.5rem;
+}

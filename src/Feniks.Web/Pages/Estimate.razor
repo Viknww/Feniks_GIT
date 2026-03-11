@@ -22,29 +22,6 @@
         <span>@(estimate?.Name ?? "")</span>
     </div>
 
-    <!-- ОТЛАДОЧНЫЙ БЛОК - временно покажет все позиции -->
-    @if (items.Any())
-    {
-        <div class="alert alert-info mb-3">
-            <details>
-                <summary>🔍 Отладка: загружено @items.Count позиций</summary>
-                <ul style="font-size: 0.8rem; max-height: 200px; overflow-y: auto;">
-                    @foreach (var item in items)
-                    {
-                        <li>
-                            ID: @item.Id, 
-                            Название: @item.Name, 
-                            StageId: @(item.StageId?.ToString() ?? "null"), 
-                            GroupId: @(item.GroupId?.ToString() ?? "null"), 
-                            Цена: @item.Price.ToString("F2"), 
-                            Кол-во: @item.Quantity.ToString("F2")
-                        </li>
-                    }
-                </ul>
-            </details>
-        </div>
-    }
-
     @if (isLoading)
     {
         <div class="text-center py-5">
@@ -70,7 +47,7 @@
 
         <!-- Заголовок сметы -->
         <div class="estimate-header bg-white rounded-3 shadow-sm p-4 mb-4">
-            <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 1rem;"> <!-- Добавлен вертикальный отступ между блоками -->
                 <div>
                     <div class="d-flex align-items-center gap-3 mb-2">
                         <h1 class="h3 mb-0">@estimate.Name</h1>
@@ -81,32 +58,25 @@
                         <span><i class="bi bi-person me-1"></i> Менеджеры: @estimate.ManagerName, @estimate.ManagerEmail</span>
                     </div>
                     <div class="d-flex gap-3 mt-2 align-items-center">
-                        <!-- Выпадающий список для выбора статуса -->
-                        <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
-                            <button class="btn btn-sm p-0 border-0" @onclick="ToggleStatusDropdown" style="background: none;">
-                                <span class="badge @GetStatusBadge(estimate.Status)" style="cursor: pointer; padding: 0.5em 0.8em;">
-                                    @estimate.Status <i class="bi bi-chevron-down ms-1 small"></i>
-                                </span>
+                        <!-- Кнопка статуса с Blazor-совместимым dropdown -->
+                        <div class="dropdown" @onclick:stopPropagation="true" style="position: relative; display: inline-block;">
+                            <button class="btn btn-sm status-btn @GetStatusClass(estimate.Status)" 
+                                    @onclick="ToggleStatusDropdown" 
+                                    style="min-width: 100px;">
+                                @estimate.Status <i class="bi bi-chevron-down ms-1 small"></i>
                             </button>
                             
                             @if (showStatusDropdown)
                             {
-                                <div style="position: absolute; top: 30px; left: 0; z-index: 1000; background: white; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.175); min-width: 160px; padding: 5px 0;">
-                                    <button class="dropdown-item" @onclick="SetStatusDraft" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Черновик" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                                        <span class="badge bg-secondary me-2" style="font-size: 0.8em;">⬤</span> Черновик
-                                    </button>
-                                    <button class="dropdown-item" @onclick="SetStatusApproval" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Согласование" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                                        <span class="badge bg-info me-2" style="font-size: 0.8em;">⬤</span> Согласование
-                                    </button>
-                                    <button class="dropdown-item" @onclick="SetStatusInProgress" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "В работе" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                                        <span class="badge bg-primary me-2" style="font-size: 0.8em;">⬤</span> В работе
-                                    </button>
-                                    <button class="dropdown-item" @onclick="SetStatusCompleted" style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; @(estimate.Status == "Завершена" ? "background-color: #e7f1ff; color: #0d6efd;" : "")">
-                                        <span class="badge bg-success me-2" style="font-size: 0.8em;">⬤</span> Завершена
-                                    </button>
+                                <div class="dropdown-menu show" style="position: absolute; top: 100%; left: 0; z-index: 1000; display: block; min-width: 160px;">
+                                    <button class="dropdown-item" @onclick='() => ChangeStatus("Черновик")'>Черновик</button>
+                                    <button class="dropdown-item" @onclick='() => ChangeStatus("Согласование")'>Согласование</button>
+                                    <button class="dropdown-item" @onclick='() => ChangeStatus("В работе")'>В работе</button>
+                                    <button class="dropdown-item" @onclick='() => ChangeStatus("Завершена")'>Завершена</button>
                                 </div>
                             }
-                        </div>                        
+                        </div>
+                        
                         <!-- Кнопка для открытия модального окна редактирования -->
                         <button class="btn btn-link text-muted p-0 border-0" @onclick="OpenEditModal" style="text-decoration: none;">
                             <i class="bi bi-pencil me-1"></i>Режим правки
@@ -115,7 +85,7 @@
                         <span class="text-muted"><i class="bi bi-lock me-1"></i>Фиксация цены заказчика</span>
                     </div>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2"> <!-- Вернул gap-2 обратно -->
                     <button class="btn btn-sm btn-outline-secondary">Экспорт</button>
                     <button class="btn btn-sm btn-outline-secondary">Обновить цены</button>
                     <button class="btn btn-sm btn-outline-secondary">Создать копию</button>
@@ -123,6 +93,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Остальной код без изменений ... -->
 
         <!-- Общий сворачиваемый блок стоимости -->
         <div class="card shadow-sm mb-4">
@@ -998,6 +970,7 @@
     private string editingGroupName = "";
     private bool showAddDialog = false;
     private NewItem newItem = new();
+    private bool showStatusDropdown = false;
 
     // Поле для общего сворачивания блока стоимости
     private bool expandedCostSection = true;
@@ -1019,9 +992,11 @@
     // Словари для хранения состояния свертывания
     private Dictionary<int, bool> stageExpandedState = new();
     private Dictionary<int, bool> groupExpandedState = new();
-
-    // Поле для статусного dropdown
-    private bool showStatusDropdown = false;
+        private void ToggleStatusDropdown()
+{
+    showStatusDropdown = !showStatusDropdown;
+    StateHasChanged();
+}
 
     private class NewItem
     {
@@ -1045,6 +1020,15 @@
         }
     }
 
+    private string GetStatusClass(string status) => status switch
+    {
+        "Черновик" => "status-draft",
+        "Согласование" => "status-approval",
+        "В работе" => "status-inprogress",
+        "Завершена" => "status-completed",
+        _ => "status-draft"
+    };
+
     private decimal GetGroupTotal(int groupId)
     {
         return items.Where(i => i.GroupId == groupId).Sum(i => i.Price * i.Quantity);
@@ -1066,10 +1050,54 @@
         StateHasChanged();
     }
 
-    private async Task SetStatusDraft() => await ChangeStatus("Черновик");
-    private async Task SetStatusApproval() => await ChangeStatus("Согласование");
-    private async Task SetStatusInProgress() => await ChangeStatus("В работе");
-    private async Task SetStatusCompleted() => await ChangeStatus("Завершена");
+    private async Task ChangeStatus(string newStatus)
+    {
+        showStatusDropdown = false;
+        if (estimate == null || estimate.Status == newStatus)
+            return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var update = new
+            {
+                Id = estimate.Id,
+                Name = estimate.Name,
+                Description = estimate.Description,
+                Status = newStatus,
+                ManagerName = estimate.ManagerName,
+                ManagerEmail = estimate.ManagerEmail,
+                ConstructionObjectId = estimate.ConstructionObjectId,
+                TotalCost = estimate.TotalCost,
+                CustomerPrice = estimate.CustomerPrice
+            };
+
+            var response = await Http.PutAsJsonAsync($"http://localhost:5050/api/Estimates/{estimate.Id}", update);
+
+            if (response.IsSuccessStatusCode)
+            {
+                estimate.Status = newStatus;
+                await NotifyChanges();
+                StateHasChanged();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Ошибка изменения статуса: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -2078,146 +2106,6 @@
         }
     }
 
-    private void ToggleStatusDropdown()
-    {
-        showStatusDropdown = !showStatusDropdown;
-        StateHasChanged();
-    }
-
-    private void CloseStatusDropdown()
-    {
-        if (showStatusDropdown)
-        {
-            showStatusDropdown = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task ChangeStatus(string newStatus)
-    {
-        showStatusDropdown = false;
-        
-        if (estimate == null || estimate.Status == newStatus)
-            return;
-
-        try
-        {
-            isSaving = true;
-            StateHasChanged();
-
-            var update = new
-            {
-                Id = estimate.Id,
-                Name = estimate.Name,
-                Description = estimate.Description,
-                Status = newStatus,
-                ManagerName = estimate.ManagerName,
-                ManagerEmail = estimate.ManagerEmail,
-                ConstructionObjectId = estimate.ConstructionObjectId,
-                TotalCost = estimate.TotalCost,
-                CustomerPrice = estimate.CustomerPrice
-            };
-
-            var response = await Http.PutAsJsonAsync($"http://localhost:5050/api/Estimates/{estimate.Id}", update);
-
-            if (response.IsSuccessStatusCode)
-            {
-                estimate.Status = newStatus;
-                await NotifyChanges();
-                StateHasChanged();
-            }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"❌ Ошибка изменения статуса: {error}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Ошибка: {ex.Message}");
-        }
-        finally
-        {
-            isSaving = false;
-            StateHasChanged();
-        }
-    }
-
-    private void ShowDeleteStageModal(EstimateStage stage)
-    {
-        stageToDelete = stage;
-        stageItemsCount = items.Count(i => i.StageId == stage.Id);
-        showDeleteStageModal = true;
-        StateHasChanged();
-    }
-
-    private void CloseDeleteStageModal()
-    {
-        showDeleteStageModal = false;
-        stageToDelete = null;
-        stageItemsCount = 0;
-        StateHasChanged();
-    }
-
-    private async Task ConfirmDeleteStage()
-    {
-        if (stageToDelete == null) return;
-
-        try
-        {
-            isSaving = true;
-            StateHasChanged();
-
-            Console.WriteLine($"Удаление этапа ID: {stageToDelete.Id}");
-
-            var stageItems = items.Where(i => i.StageId == stageToDelete.Id).ToList();
-            Console.WriteLine($"Позиций для удаления: {stageItems.Count}");
-            
-            foreach (var item in stageItems)
-            {
-                await Http.DeleteAsync($"http://localhost:5050/api/EstimateItems/{item.Id}");
-            }
-
-            var stageGroups = groups.Where(g => g.StageId == stageToDelete.Id).ToList();
-            Console.WriteLine($"Групп для удаления: {stageGroups.Count}");
-            
-            foreach (var group in stageGroups)
-            {
-                await Http.DeleteAsync($"http://localhost:5050/api/EstimateItemGroups/{group.Id}");
-            }
-
-            var response = await Http.DeleteAsync($"http://localhost:5050/api/EstimateStages/{stageToDelete.Id}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                Console.WriteLine($"✅ Этап {stageToDelete.Id} удален из БД");
-                
-                await LoadData();
-                selectedItems.Clear();
-                CloseDeleteStageModal();
-                await NotifyChanges();
-                
-                await JS.InvokeVoidAsync("alert", $"✅ Этап '{stageToDelete.Name}' удален");
-            }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"❌ Ошибка удаления этапа: {error}");
-                await JS.InvokeVoidAsync("alert", $"Ошибка при удалении этапа: {response.StatusCode}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Ошибка: {ex.Message}");
-            await JS.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
-        }
-        finally
-        {
-            isSaving = false;
-            StateHasChanged();
-        }
-    }
-
     private void OpenEditModal()
     {
         if (estimate != null)
@@ -2298,6 +2186,81 @@
         finally
         {
             isSavingEdit = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowDeleteStageModal(EstimateStage stage)
+    {
+        stageToDelete = stage;
+        stageItemsCount = items.Count(i => i.StageId == stage.Id);
+        showDeleteStageModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseDeleteStageModal()
+    {
+        showDeleteStageModal = false;
+        stageToDelete = null;
+        stageItemsCount = 0;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteStage()
+    {
+        if (stageToDelete == null) return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            Console.WriteLine($"Удаление этапа ID: {stageToDelete.Id}");
+
+            var stageItems = items.Where(i => i.StageId == stageToDelete.Id).ToList();
+            Console.WriteLine($"Позиций для удаления: {stageItems.Count}");
+            
+            foreach (var item in stageItems)
+            {
+                await Http.DeleteAsync($"http://localhost:5050/api/EstimateItems/{item.Id}");
+            }
+
+            var stageGroups = groups.Where(g => g.StageId == stageToDelete.Id).ToList();
+            Console.WriteLine($"Групп для удаления: {stageGroups.Count}");
+            
+            foreach (var group in stageGroups)
+            {
+                await Http.DeleteAsync($"http://localhost:5050/api/EstimateItemGroups/{group.Id}");
+            }
+
+            var response = await Http.DeleteAsync($"http://localhost:5050/api/EstimateStages/{stageToDelete.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"✅ Этап {stageToDelete.Id} удален из БД");
+                
+                await LoadData();
+                selectedItems.Clear();
+                CloseDeleteStageModal();
+                await NotifyChanges();
+                
+                await JS.InvokeVoidAsync("alert", $"✅ Этап '{stageToDelete.Name}' удален");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Ошибка удаления этапа: {error}");
+                await JS.InvokeVoidAsync("alert", $"Ошибка при удалении этапа: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Ошибка: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
             StateHasChanged();
         }
     }

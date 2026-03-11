@@ -7,6 +7,73 @@
 @inject NavigationManager Navigation
 @inject DataSyncService DataSyncService
 
+<style>
+/* Стили для статусов с прозрачностью 90% */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    text-align: center;
+    min-width: 100px; /* Фиксированная минимальная ширина */
+    width: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    /* Фиксируем размер шрифта */
+    font-size: 12px;
+    line-height: 1.4;
+    /* Запрещаем перенос */
+    white-space: nowrap;
+}
+
+/* Базовый серый градиент для статуса по умолчанию */
+.status-badge {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.9) 0%, rgba(75, 85, 99, 0.9) 100%);
+}
+
+.status-badge.status-draft {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.9) 0%, rgba(75, 85, 99, 0.9) 100%);
+}
+
+.status-badge.status-approval {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%);
+}
+
+.status-badge.status-inprogress {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(217, 119, 6, 0.9) 100%);
+}
+
+.status-badge.status-completed {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%);
+}
+
+.status-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.95) 0%, rgba(75, 85, 99, 0.95) 100%);
+}
+
+.status-badge.status-draft:hover {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.95) 0%, rgba(75, 85, 99, 0.95) 100%);
+}
+
+.status-badge.status-approval:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%);
+}
+
+.status-badge.status-inprogress:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(217, 119, 6, 0.95) 100%);
+}
+
+.status-badge.status-completed:hover {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);
+}
+</style>
+
 <div class="container py-4">
     @if (isLoading)
     {
@@ -38,9 +105,9 @@
         <!-- Компактные финансовые показатели в одну строку -->
         <div class="row g-2 mb-4 row-cols-2 row-cols-sm-3 row-cols-md-6">
             <div class="col">
-                <div class="card border-0 bg-light py-2 px-2 h-100">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
                     <div class="d-flex align-items-center gap-1">
-                        <div class="bg-primary bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                        <div class="bg-primary bg-opacity-10 p-1 rounded-circle stat-icon">
                             <i class="bi bi-files fs-6 text-primary"></i>
                         </div>
                         <div class="d-flex flex-column lh-1">
@@ -52,9 +119,9 @@
             </div>
 
             <div class="col">
-                <div class="card border-0 bg-light py-2 px-2 h-100">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
                     <div class="d-flex align-items-center gap-1">
-                        <div class="bg-info bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                        <div class="bg-info bg-opacity-10 p-1 rounded-circle stat-icon">
                             <i class="bi bi-calculator fs-6 text-info"></i>
                         </div>
                         <div class="d-flex flex-column lh-1">
@@ -66,9 +133,9 @@
             </div>
 
             <div class="col">
-                <div class="card border-0 bg-light py-2 px-2 h-100">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
                     <div class="d-flex align-items-center gap-1">
-                        <div class="bg-warning bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                        <div class="bg-warning bg-opacity-10 p-1 rounded-circle stat-icon">
                             <i class="bi bi-graph-up-arrow fs-6" style="color: #b45f06;"></i>
                         </div>
                         <div class="d-flex flex-column lh-1">
@@ -80,9 +147,9 @@
             </div>
 
             <div class="col">
-                <div class="card border-0 bg-light py-2 px-2 h-100">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
                     <div class="d-flex align-items-center gap-1">
-                        <div class="bg-success bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                        <div class="bg-success bg-opacity-10 p-1 rounded-circle stat-icon">
                             <i class="bi bi-people fs-6 text-success"></i>
                         </div>
                         <div class="d-flex flex-column lh-1">
@@ -94,9 +161,9 @@
             </div>
 
             <div class="col">
-                <div class="card border-0 bg-light py-2 px-2 h-100">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
                     <div class="d-flex align-items-center gap-1">
-                        <div class="bg-info bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                        <div class="bg-info bg-opacity-10 p-1 rounded-circle stat-icon">
                             <i class="bi bi-check2-circle fs-6 text-info"></i>
                         </div>
                         <div class="d-flex flex-column lh-1">
@@ -108,9 +175,9 @@
             </div>
 
             <div class="col">
-                <div class="card border-0 bg-light py-2 px-2 h-100">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
                     <div class="d-flex align-items-center gap-1">
-                        <div class="bg-danger bg-opacity-10 p-1 rounded-circle" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                        <div class="bg-danger bg-opacity-10 p-1 rounded-circle stat-icon">
                             <i class="bi bi-exclamation-triangle fs-6 text-danger"></i>
                         </div>
                         <div class="d-flex flex-column lh-1">
@@ -161,7 +228,9 @@
                                     var profitPercent = est.TotalCost > 0 ? Math.Round(profit / est.TotalCost * 100, 1) : 0;
                                     <tr style="cursor: pointer;" @onclick="() => GoToEstimate(est.Id)" class="border-bottom">
                                         <td class="px-3 py-2 fw-medium">@est.Name</td>
-                                        <td class="py-2"><span class="badge @GetStatusBadge(est.Status)" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">@est.Status</span></td>
+                                        <td class="py-2">
+                                            <span class="status-badge @GetStatusBadgeClass(est.Status)">@est.Status</span>
+                                        </td>
                                         <td class="py-2 text-end fw-medium">@FormatNumber(est.TotalCost) ₽</td>
                                         <td class="py-2 text-end" style="color: #b45f06;">
                                             <span class="fw-bold">@FormatNumber(profit) ₽</span>
@@ -285,14 +354,13 @@
         }
     }
 
-    private string GetStatusBadge(string status) => status switch
+    private string GetStatusBadgeClass(string status) => status switch
     {
-        "Черновик" => "bg-secondary",
-        "В работе" => "bg-primary",
-        "Согласование" => "bg-warning text-dark",
-        "Утверждена" => "bg-success",
-        "Завершена" => "bg-info",
-        _ => "bg-light text-dark"
+        "Черновик" => "status-draft",
+        "В работе" => "status-inprogress",
+        "Согласование" => "status-approval",
+        "Завершена" => "status-completed",
+        _ => "status-draft"
     };
 
     private void EditObject()

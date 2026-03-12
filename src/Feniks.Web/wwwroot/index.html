@@ -29,6 +29,12 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+    window.getSelectValue = function(selector) {
+        var select = document.querySelector(selector);
+        return select ? select.value : null;
+    };
+</script>
 </body>
 
 </html>

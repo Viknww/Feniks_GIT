@@ -47,7 +47,7 @@
 
         <!-- Заголовок сметы -->
         <div class="estimate-header bg-white rounded-3 shadow-sm p-4 mb-4">
-            <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 1rem;"> <!-- Добавлен вертикальный отступ между блоками -->
+            <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 1rem;">
                 <div>
                     <div class="d-flex align-items-center gap-3 mb-2">
                         <h1 class="h3 mb-0">@estimate.Name</h1>
@@ -85,7 +85,7 @@
                         <span class="text-muted"><i class="bi bi-lock me-1"></i>Фиксация цены заказчика</span>
                     </div>
                 </div>
-                <div class="d-flex gap-2"> <!-- Вернул gap-2 обратно -->
+                <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-outline-secondary">Экспорт</button>
                     <button class="btn btn-sm btn-outline-secondary">Обновить цены</button>
                     <button class="btn btn-sm btn-outline-secondary">Создать копию</button>
@@ -93,8 +93,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Остальной код без изменений ... -->
 
         <!-- Общий сворачиваемый блок стоимости -->
         <div class="card shadow-sm mb-4">
@@ -440,62 +438,255 @@
                         <div class="d-flex gap-2">
                             <!-- Кнопка группирования -->
                             <button class="btn btn-sm btn-outline-success" @onclick="ShowGroupModal">
-                                <i class="bi bi-folder-plus me-1"></i>В группу
+                                <i class="bi bi-folder-plus me-1"></i>Группировать
                             </button>
 
-                            <!-- Кнопка Копировать с выпадающим списком -->
-                            <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
-                                <button class="btn btn-sm btn-outline-primary" @onclick="ToggleCopyDropdown" style="display: inline-flex; align-items: center;">
-                                    <i class="bi bi-files me-1"></i>Копировать
-                                    <i class="bi bi-chevron-down ms-1 small"></i>
-                                </button>
-                                
-                                @if (showCopyDropdown)
-                                {
-                                    <div style="position: absolute; bottom: 35px; left: 0; z-index: 1000; background: white; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.175); min-width: 250px; padding: 8px 0;" @onclick:stopPropagation="true">
-                                        <button class="dropdown-item" @onclick='(() => ShowCopyMoveModal("same", "copy"))' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; cursor: pointer;">
-                                            <i class="bi bi-files me-2"></i> В эту же группу
-                                        </button>
-                                        <button class="dropdown-item" @onclick='(() => ShowCopyMoveModal("group", "copy"))' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; cursor: pointer;">
-                                            <i class="bi bi-folder me-2"></i> В группу (текущий этап)
-                                        </button>
-                                        <button class="dropdown-item" @onclick='(() => ShowCopyMoveModal("stage", "copy"))' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; cursor: pointer;">
-                                            <i class="bi bi-layers me-2"></i> В этап
-                                        </button>
-                                        <div style="height: 1px; background-color: #e9ecef; margin: 8px 0;"></div>
-                                        <button class="dropdown-item text-muted" disabled style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none;">
-                                            <i class="bi bi-file-earmark me-2"></i> В смету (будет позже)
-                                        </button>
-                                    </div>
-                                }
-                            </div>
+                            <!-- Кнопка Копировать -->
+                            <button class="btn btn-sm btn-outline-primary" @onclick="ShowCopyOptions">
+                                <i class="bi bi-files me-1"></i>Копировать
+                            </button>
 
-                            <!-- Кнопка Переместить с выпадающим списком -->
-                            <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="ToggleMoveDropdown" style="display: inline-flex; align-items: center;">
-                                    <i class="bi bi-folder-plus me-1"></i>Переместить
-                                    <i class="bi bi-chevron-down ms-1 small"></i>
+                            <!-- Кнопка Переместить -->
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="ShowMoveOptions">
+                                <i class="bi bi-folder-plus me-1"></i>Переместить
+                            </button>
+
+                            <!-- Кнопка Разгруппировать (переместить в "без группы") -->
+                            @if (selectedItems.Any(i => items.First(x => x.Id == i).GroupId.HasValue))
+                            {
+                                <button class="btn btn-sm btn-outline-warning" @onclick="UngroupSelected">
+                                    <i class="bi bi-folder-minus me-1"></i>Разгруппировать
                                 </button>
-                                
-                                @if (showMoveDropdown)
-                                {
-                                    <div style="position: absolute; bottom: 35px; left: 0; z-index: 1000; background: white; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.175); min-width: 250px; padding: 8px 0;" @onclick:stopPropagation="true">
-                                        <button class="dropdown-item" @onclick='(() => ShowCopyMoveModal("group", "move"))' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; cursor: pointer;">
-                                            <i class="bi bi-folder me-2"></i> В группу (текущий этап)
-                                        </button>
-                                        <button class="dropdown-item" @onclick='(() => ShowCopyMoveModal("stage", "move"))' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none; cursor: pointer;">
-                                            <i class="bi bi-layers me-2"></i> В этап
-                                        </button>
-                                        <div style="height: 1px; background-color: #e9ecef; margin: 8px 0;"></div>
-                                        <button class="dropdown-item text-muted" disabled style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none;">
-                                            <i class="bi bi-file-earmark me-2"></i> В смету (будет позже)
-                                        </button>
-                                    </div>
-                                }
-                            </div>
+                            }
 
                             <button class="btn btn-sm btn-outline-danger" @onclick="DeleteSelected">
                                 <i class="bi bi-trash me-1"></i>Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Диалог копирования/перемещения -->
+        @if (showCopyMoveOptions)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">@dialogTitle</h5>
+                            <button type="button" class="btn-close" @onclick="CloseCopyMoveOptions"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Предупреждение о разных группах/этапах -->
+                            @if (showMixedItemsWarning)
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    Выбраны позиции из разных групп или этапов
+                                </div>
+                            }
+
+                            <!-- Выбор действия для копирования -->
+                            @if (dialogMode == "copy")
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Выберите действие:</label>
+                                    <div class="d-flex flex-column gap-2">
+                                        <button class="btn btn-outline-primary text-start" @onclick="() => StartSimpleCopy()">
+                                            <i class="bi bi-files me-2"></i> Копировать (без изменения группы/этапа)
+                                        </button>
+                                        <button class="btn btn-outline-primary text-start" @onclick="() => StartCopyToGroup()">
+                                            <i class="bi bi-folder me-2"></i> В группу
+                                        </button>
+                                        <button class="btn btn-outline-primary text-start" @onclick="() => StartCopyToStage()">
+                                            <i class="bi bi-layers me-2"></i> В этап
+                                        </button>
+                                        <button class="btn btn-outline-primary text-start" @onclick="() => StartCopyToUngrouped()">
+                                            <i class="bi bi-folder-minus me-2"></i> Без группы
+                                        </button>
+                                        <button class="btn btn-outline-secondary text-start" disabled>
+                                            <i class="bi bi-file-earmark me-2"></i> В смету (скоро)
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Выбор действия для перемещения -->
+                            @if (dialogMode == "move")
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Выберите действие:</label>
+                                    <div class="d-flex flex-column gap-2">
+                                        <button class="btn btn-outline-secondary text-start" @onclick="() => StartMoveToGroup()">
+                                            <i class="bi bi-folder me-2"></i> В группу
+                                        </button>
+                                        <button class="btn btn-outline-secondary text-start" @onclick="() => StartMoveToStage()">
+                                            <i class="bi bi-layers me-2"></i> В этап
+                                        </button>
+                                        <button class="btn btn-outline-secondary text-start" @onclick="() => StartMoveToUngrouped()">
+                                            <i class="bi bi-folder-minus me-2"></i> Без группы
+                                        </button>
+                                        <button class="btn btn-outline-secondary text-start" disabled>
+                                            <i class="bi bi-file-earmark me-2"></i> В смету (скоро)
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" @onclick="CloseCopyMoveOptions">Отмена</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Модальное окно выбора группы/этапа -->
+        @if (showTargetSelection)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">@targetSelectionTitle</h5>
+                            <button type="button" class="btn-close" @onclick="CloseTargetSelection"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Выбор этапа -->
+                            @if (targetType == "stage")
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Выберите этап:</label>
+                                    <select class="form-select" @bind="selectedTargetStageId">
+                                        <option value="">-- Выберите этап --</option>
+                                        @foreach (var stage in stages.OrderBy(s => s.OrderIndex))
+                                        {
+                                            <option value="@stage.Id">@stage.Name</option>
+                                        }
+                                        <option value="-1" style="color: #0d6efd; font-weight: 500;">➕ Новый этап</option>
+                                    </select>
+                                </div>
+
+                                @if (selectedTargetStageId == -1)
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Название нового этапа</label>
+                                        <input type="text" class="form-control" @bind="newStageName" placeholder="Введите название этапа" />
+                                    </div>
+                                }
+                            }
+
+                            <!-- Выбор группы -->
+                            @if (targetType == "group")
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Выберите этап для группы:</label>
+                                    <select class="form-select" @bind="selectedGroupStageId">
+                                        <option value="">-- Выберите этап --</option>
+                                        @foreach (var stage in stages.OrderBy(s => s.OrderIndex))
+                                        {
+                                            <option value="@stage.Id">@stage.Name</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                @if (selectedGroupStageId.HasValue && selectedGroupStageId > 0)
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Выберите группу:</label>
+                                        <select class="form-select" @bind="selectedTargetGroupId">
+                                            <option value="">-- Без группы --</option>
+                                            @{
+                                                var availableGroups = groups.Where(g => g.StageId == selectedGroupStageId).OrderBy(g => g.Name).ToList();
+                                            }
+                                            @foreach (var group in availableGroups)
+                                            {
+                                                <option value="@group.Id">@group.Name</option>
+                                            }
+                                            <option value="-1" style="color: #0d6efd; font-weight: 500;">➕ Новая группа</option>
+                                        </select>
+                                    </div>
+
+                                    @if (selectedTargetGroupId == -1)
+                                    {
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Название новой группы</label>
+                                            <input type="text" class="form-control" @bind="newGroupName" placeholder="Введите название группы" />
+                                        </div>
+                                    }
+                                }
+                            }
+
+                            <!-- Выбор "без группы" (разгруппировка) -->
+                            @if (targetType == "ungrouped")
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Выберите этап для размещения:</label>
+                                    <select class="form-select" @bind="selectedTargetStageId">
+                                        <option value="">-- Выберите этап --</option>
+                                        @foreach (var stage in stages.OrderBy(s => s.OrderIndex))
+                                        {
+                                            <option value="@stage.Id">@stage.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Позиции будут перемещены в выбранный этап без группы
+                                </div>
+                            }
+
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>@selectedItems.Count</strong> позиций будут @(dialogMode == "copy" ? "скопированы" : "перемещены")
+                                @if (targetType == "stage")
+                                {
+                                    if (selectedTargetStageId == -1 && !string.IsNullOrWhiteSpace(newStageName))
+                                    {
+                                        <span>в новый этап <strong>@newStageName</strong></span>
+                                    }
+                                    else if (selectedTargetStageId > 0)
+                                    {
+                                        var stage = stages.FirstOrDefault(s => s.Id == selectedTargetStageId);
+                                        <span>в этап <strong>@stage?.Name</strong></span>
+                                    }
+                                }
+                                @if (targetType == "group")
+                                {
+                                    if (selectedTargetGroupId == -1 && !string.IsNullOrWhiteSpace(newGroupName))
+                                    {
+                                        <span>в новую группу <strong>@newGroupName</strong></span>
+                                    }
+                                    else if (selectedTargetGroupId > 0)
+                                    {
+                                        var group = groups.FirstOrDefault(g => g.Id == selectedTargetGroupId);
+                                        <span>в группу <strong>@group?.Name</strong></span>
+                                    }
+                                    else
+                                    {
+                                        <span>без группы</span>
+                                    }
+                                }
+                                @if (targetType == "ungrouped")
+                                {
+                                    if (selectedTargetStageId > 0)
+                                    {
+                                        var stage = stages.FirstOrDefault(s => s.Id == selectedTargetStageId);
+                                        <span>в этап <strong>@stage?.Name</strong> без группы</span>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" @onclick="CloseTargetSelection">Назад</button>
+                            <button class="btn btn-primary" @onclick="ExecuteTargetAction" disabled="@isTargetSelectionInvalid">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                }
+                                @(dialogMode == "copy" ? "Копировать" : "Переместить")
                             </button>
                         </div>
                     </div>
@@ -616,209 +807,67 @@
             </div>
         }
 
-        <!-- Модальное окно для группирования -->
-        @if (showGroupModal)
-        {
-            <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header bg-success text-white">
-                            <h5 class="modal-title">📁 Создание группы</h5>
-                            <button type="button" class="btn-close btn-close-white" @onclick="CloseGroupModal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Название новой группы *</label>
-                                <input type="text" class="form-control" @bind="newGroupName" placeholder="Введите название группы" />
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Выберите этап *</label>
-                                <select class="form-select" @bind="selectedGroupStageId">
-                                    <option value="">-- Выберите этап --</option>
-                                    @foreach (var stage in stages.OrderBy(s => s.OrderIndex))
-                                    {
-                                        <option value="@stage.Id">@stage.Name</option>
-                                    }
-                                </select>
-                                <div class="form-text text-danger">Необходимо выбрать этап для создания группы</div>
-                            </div>
+        <!-- Модальное окно для группирования - ПОЛНОСТЬЮ ПЕРЕПИСАНО -->
+@if (showGroupModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);" @onclick:stopPropagation="true">
+        <div class="modal-dialog" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">📁 Создание группы</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseGroupModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Название новой группы *</label>
+                        <input type="text" class="form-control" @bind="newGroupName" @bind:event="oninput" placeholder="Введите название группы" />
+                        @if (string.IsNullOrWhiteSpace(newGroupName))
+                        {
+                            <div class="text-danger small mt-1">Введите название группы</div>
+                        }
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Выберите этап *</label>
+                        <select class="form-select" @bind="selectedGroupStageId" @bind:event="onchange">
+                            <option value="">-- Выберите этап --</option>
+                            @foreach (var stage in stages.OrderBy(s => s.OrderIndex))
+                            {
+                                <option value="@stage.Id">@stage.Name</option>
+                            }
+                        </select>
+                        @if (!selectedGroupStageId.HasValue)
+                        {
+                            <div class="text-danger small mt-1">Необходимо выбрать этап для создания группы</div>
+                        }
+                    </div>
 
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                Будет создана группа <strong>@(string.IsNullOrWhiteSpace(newGroupName) ? "Новая группа" : newGroupName)</strong>
-                                @if (selectedGroupStageId.HasValue)
-                                {
-                                    var stage = stages.FirstOrDefault(s => s.Id == selectedGroupStageId);
-                                    <span>в этапе <strong>@stage?.Name</strong></span>
-                                }
-                                и в нее будут перемещены <strong>@selectedItems.Count</strong> позиций.
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" @onclick="CloseGroupModal">Отмена</button>
-                            <button class="btn btn-success" @onclick="CreateGroupAndMove" 
-                                    disabled="@isSaving || !selectedGroupStageId.HasValue || string.IsNullOrWhiteSpace(newGroupName)">
-                                @if (isSaving)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                }
-                                Создать группу и переместить
-                            </button>
-                        </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Будет создана группа <strong>@(string.IsNullOrWhiteSpace(newGroupName) ? "Новая группа" : newGroupName)</strong>
+                        @if (selectedGroupStageId.HasValue)
+                        {
+                            var stage = stages.FirstOrDefault(s => s.Id == selectedGroupStageId);
+                            <span>в этапе <strong>@stage?.Name</strong></span>
+                        }
+                        и в нее будут перемещены <strong>@selectedItems.Count</strong> позиций.
                     </div>
                 </div>
-            </div>
-        }
-
-        <!-- Модальное окно для копирования/перемещения позиций -->
-        @if (showCopyMoveModal)
-        {
-            <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">@copyMoveTitle</h5>
-                            <button type="button" class="btn-close" @onclick="CloseCopyMoveModal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <!-- Выбор этапа -->
-                            @if (copyMoveTarget == "stage")
-                            {
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Выберите этап:</label>
-                                    <select class="form-select" @bind="selectedTargetStageId">
-                                        <option value="">-- Выберите этап --</option>
-                                        @foreach (var stage in stages.OrderBy(s => s.OrderIndex))
-                                        {
-                                            <option value="@stage.Id">@stage.Name</option>
-                                        }
-                                    </select>
-                                </div>
-                            }
-
-                            <!-- Режим создания новой группы -->
-                            @if (isCreatingNewGroup)
-                            {
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Название новой группы</label>
-                                    <input type="text" class="form-control" @bind="newGroupName" placeholder="Введите название группы" />
-                                </div>
-                                <div class="d-flex justify-content-end gap-2 mb-3">
-                                    <button class="btn btn-sm btn-secondary" @onclick="CancelNewGroup">Отмена</button>
-                                    <button class="btn btn-sm btn-success" @onclick="CreateNewGroupAndContinue" disabled="@string.IsNullOrWhiteSpace(newGroupName)">
-                                        Создать
-                                    </button>
-                                </div>
-                            }
-                            else
-                            {
-                                <!-- Выбор группы -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Выберите группу:</label>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select" @bind="selectedTargetGroupId" style="flex: 1;">
-                                            <option value="">-- Без группы --</option>
-                                            @{
-                                                int? stageForGroups = copyMoveTarget == "stage" ? selectedTargetStageId : currentStageId;
-                                                var availableGroups = new List<EstimateItemGroup>();
-                                                
-                                                if (stageForGroups.HasValue && stageForGroups.Value > 0)
-                                                {
-                                                    availableGroups = groups.Where(g => g.StageId == stageForGroups.Value).OrderBy(g => g.Name).ToList();
-                                                    foreach (var group in availableGroups)
-                                                    {
-                                                        <option value="@group.Id">@group.Name</option>
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    <option value="" disabled>Сначала выберите этап</option>
-                                                }
-                                            }
-                                        </select>
-                                        @if (stageForGroups.HasValue && stageForGroups.Value > 0 && !isCreatingNewGroup)
-                                        {
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="StartNewGroupCreation" title="Создать новую группу">
-                                                <i class="bi bi-plus-circle"></i>
-                                            </button>
-                                        }
-                                    </div>
-                                </div>
-                            }
-
-                            <!-- Информационное сообщение -->
-                            <div class="alert alert-info mt-3">
-                                <i class="bi bi-info-circle me-2"></i>
-                                @{
-                                    string actionText = copyMoveMode == "copy" ? "скопированы" : "перемещены";
-                                    string targetText = "";
-                                    
-                                    if (copyMoveTarget == "same")
-                                    {
-                                        targetText = "в эту же группу";
-                                    }
-                                    else if (copyMoveTarget == "group")
-                                    {
-                                        if (isCreatingNewGroup && !string.IsNullOrWhiteSpace(newGroupName))
-                                        {
-                                            targetText = $"в новую группу: {newGroupName}";
-                                        }
-                                        else if (selectedTargetGroupId.HasValue)
-                                        {
-                                            var group = groups.FirstOrDefault(g => g.Id == selectedTargetGroupId);
-                                            targetText = $"в группу: {group?.Name}";
-                                        }
-                                        else
-                                        {
-                                            targetText = "без группы";
-                                        }
-                                    }
-                                    else if (copyMoveTarget == "stage")
-                                    {
-                                        if (selectedTargetStageId.HasValue)
-                                        {
-                                            var stage = stages.FirstOrDefault(s => s.Id == selectedTargetStageId);
-                                            targetText = $"в этап: {stage?.Name}";
-                                            
-                                            if (isCreatingNewGroup && !string.IsNullOrWhiteSpace(newGroupName))
-                                            {
-                                                targetText += $", в новую группу: {newGroupName}";
-                                            }
-                                            else if (selectedTargetGroupId.HasValue)
-                                            {
-                                                var group = groups.FirstOrDefault(g => g.Id == selectedTargetGroupId);
-                                                targetText += $", группа: {group?.Name}";
-                                            }
-                                            else
-                                            {
-                                                targetText += " (без группы)";
-                                            }
-                                        }
-                                        else
-                                        {
-                                            targetText = "выберите этап";
-                                        }
-                                    }
-                                }
-                                <strong>@selectedItems.Count</strong> позиций будут @actionText @targetText
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" @onclick="CloseCopyMoveModal">Отмена</button>
-                            <button class="btn btn-primary" @onclick="ExecuteCopyMove" 
-                                    disabled="@isSaving || isCreatingNewGroup">
-                                @if (isSaving)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                }
-                                @(copyMoveMode == "copy" ? "Копировать" : "Переместить")
-                            </button>
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseGroupModal">Отмена</button>
+                    <button class="btn btn-success" @onclick="CreateGroupAndMove" 
+                            disabled="@(isSaving || string.IsNullOrWhiteSpace(newGroupName) || !selectedGroupStageId.HasValue)">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        Создать группу и переместить
+                    </button>
                 </div>
             </div>
-        }
+        </div>
+    </div>
+}
 
         <!-- Модальное окно редактирования сметы -->
         @if (showEditModal)
@@ -947,8 +996,8 @@
 
     // Поля для копирования/перемещения
     private bool showCopyMoveModal = false;
-    private string copyMoveMode = ""; // "copy" или "move"
-    private string copyMoveTarget = ""; // "same", "group", "stage", "estimate"
+    private string copyMoveMode = "";
+    private string copyMoveTarget = "";
     private int? selectedTargetStageId;
     private int? selectedTargetGroupId;
     private string copyMoveTitle = "";
@@ -972,10 +1021,7 @@
     private NewItem newItem = new();
     private bool showStatusDropdown = false;
 
-    // Поле для общего сворачивания блока стоимости
     private bool expandedCostSection = true;
-
-    // Поля для модального окна редактирования сметы
     private bool showEditModal = false;
     private bool isSavingEdit = false;
     private string editName = "";
@@ -984,19 +1030,47 @@
     private string editManagerName = "";
     private string editManagerEmail = "";
 
-    // Поля для удаления этапа
     private bool showDeleteStageModal = false;
     private EstimateStage? stageToDelete;
     private int stageItemsCount = 0;
 
-    // Словари для хранения состояния свертывания
     private Dictionary<int, bool> stageExpandedState = new();
     private Dictionary<int, bool> groupExpandedState = new();
-        private void ToggleStatusDropdown()
-{
-    showStatusDropdown = !showStatusDropdown;
-    StateHasChanged();
-}
+
+    // НОВЫЕ ПОЛЯ для улучшенного копирования/перемещения
+    private bool showCopyMoveOptions = false;
+    private string dialogMode = "";
+    private string dialogTitle = "";
+    private bool showMixedItemsWarning = false;
+    private bool showTargetSelection = false;
+    private string targetType = "";
+    private string targetSelectionTitle = "";
+    private string newStageName = "";
+    
+    // ИСПРАВЛЕНО: условие для кнопки с проверкой на null
+    private bool isTargetSelectionInvalid
+    {
+        get
+        {
+            if (targetType == "stage")
+            {
+                if (!selectedTargetStageId.HasValue) return true;
+                if (selectedTargetStageId == -1 && string.IsNullOrWhiteSpace(newStageName)) return true;
+                return false;
+            }
+            else if (targetType == "group")
+            {
+                if (!selectedGroupStageId.HasValue || selectedGroupStageId <= 0) return true;
+                if (selectedTargetGroupId == -1 && string.IsNullOrWhiteSpace(newGroupName)) return true;
+                return false;
+            }
+            else if (targetType == "ungrouped")
+            {
+                return !selectedTargetStageId.HasValue;
+            }
+            return true;
+        }
+    }
 
     private class NewItem
     {
@@ -1010,7 +1084,449 @@
         public int? GroupId { get; set; }
     }
 
-    // ВСПОМОГАТЕЛЬНЫЙ МЕТОД для уведомлений
+    // НОВЫЙ МЕТОД: проверка, все ли выбранные позиции из одной группы и одного этапа
+    private bool AreAllSelectedItemsInSameGroupAndStage()
+    {
+        if (selectedItems.Count == 0) return true;
+        
+        var firstItem = items.First(i => selectedItems.Contains(i.Id));
+        var firstStageId = firstItem.StageId;
+        var firstGroupId = firstItem.GroupId;
+        
+        return items.Where(i => selectedItems.Contains(i.Id))
+                    .All(i => i.StageId == firstStageId && i.GroupId == firstGroupId);
+    }
+
+    // НОВЫЙ МЕТОД: показать опции копирования
+    private void ShowCopyOptions()
+    {
+        showMixedItemsWarning = !AreAllSelectedItemsInSameGroupAndStage();
+        dialogMode = "copy";
+        dialogTitle = "Копирование позиций";
+        showCopyMoveOptions = true;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: показать опции перемещения
+    private void ShowMoveOptions()
+    {
+        showMixedItemsWarning = !AreAllSelectedItemsInSameGroupAndStage();
+        dialogMode = "move";
+        dialogTitle = "Перемещение позиций";
+        showCopyMoveOptions = true;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: закрыть диалог опций
+    private void CloseCopyMoveOptions()
+    {
+        showCopyMoveOptions = false;
+        dialogMode = "";
+        showMixedItemsWarning = false;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: простое копирование (без изменения группы/этапа)
+    private async Task StartSimpleCopy()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var itemsToProcess = items.Where(i => selectedItems.Contains(i.Id)).ToList();
+
+            foreach (var item in itemsToProcess)
+            {
+                var newItem = new
+                {
+                    EstimateId = Id,
+                    GroupId = item.GroupId,
+                    StageId = item.StageId,
+                    Name = item.Name,
+                    Unit = item.Unit,
+                    Quantity = item.Quantity,
+                    Price = item.Price,
+                    Markup = item.Markup,
+                    Type = item.Type,
+                    OrderIndex = items.Count,
+                    CustomerPrice = item.CustomerPrice
+                };
+                await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItems", newItem);
+            }
+
+            await LoadData();
+            selectedItems.Clear();
+            await NotifyChanges();
+            CloseCopyMoveOptions();
+            
+            await JS.InvokeVoidAsync("alert", $"✅ {itemsToProcess.Count} позиций скопировано");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при копировании: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"❌ Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // НОВЫЙ МЕТОД: начать копирование в группу
+    private void StartCopyToGroup()
+    {
+        CloseCopyMoveOptions();
+        targetType = "group";
+        targetSelectionTitle = "Копирование в группу";
+        selectedGroupStageId = null;
+        selectedTargetGroupId = null;
+        newGroupName = "";
+        showTargetSelection = true;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: начать копирование в этап
+    private void StartCopyToStage()
+    {
+        CloseCopyMoveOptions();
+        targetType = "stage";
+        targetSelectionTitle = "Копирование в этап";
+        selectedTargetStageId = null;
+        newStageName = "";
+        showTargetSelection = true;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: начать копирование без группы
+    private void StartCopyToUngrouped()
+    {
+        CloseCopyMoveOptions();
+        targetType = "ungrouped";
+        targetSelectionTitle = "Копирование без группы";
+        selectedTargetStageId = null;
+        showTargetSelection = true;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: начать перемещение в группу
+    private void StartMoveToGroup()
+    {
+        CloseCopyMoveOptions();
+        targetType = "group";
+        targetSelectionTitle = "Перемещение в группу";
+        selectedGroupStageId = null;
+        selectedTargetGroupId = null;
+        newGroupName = "";
+        showTargetSelection = true;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: начать перемещение в этап
+    private void StartMoveToStage()
+    {
+        CloseCopyMoveOptions();
+        targetType = "stage";
+        targetSelectionTitle = "Перемещение в этап";
+        selectedTargetStageId = null;
+        newStageName = "";
+        showTargetSelection = true;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: начать перемещение без группы
+    private void StartMoveToUngrouped()
+    {
+        CloseCopyMoveOptions();
+        targetType = "ungrouped";
+        targetSelectionTitle = "Перемещение без группы";
+        selectedTargetStageId = null;
+        showTargetSelection = true;
+        StateHasChanged();
+    }
+
+    // НОВЫЙ МЕТОД: разгруппировать выбранные позиции
+    private async Task UngroupSelected()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var itemsToProcess = items.Where(i => selectedItems.Contains(i.Id) && i.GroupId.HasValue).ToList();
+            int processedCount = 0;
+
+            foreach (var item in itemsToProcess)
+            {
+                var updateItem = new
+                {
+                    item.Id,
+                    item.Name,
+                    item.Unit,
+                    item.Quantity,
+                    item.Price,
+                    item.Markup,
+                    item.Type,
+                    CustomerPrice = item.CustomerPrice,
+                    StageId = item.StageId,
+                    GroupId = (int?)null
+                };
+
+                var response = await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItems/{item.Id}", updateItem);
+                if (response.IsSuccessStatusCode) processedCount++;
+            }
+
+            await LoadData();
+            selectedItems.Clear();
+            await NotifyChanges();
+
+            if (processedCount > 0)
+            {
+                await JS.InvokeVoidAsync("alert", $"✅ {processedCount} позиций разгруппировано");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при разгруппировке: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"❌ Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // НОВЫЙ МЕТОД: закрыть выбор цели
+    private void CloseTargetSelection()
+    {
+        showTargetSelection = false;
+        targetType = "";
+        selectedTargetStageId = null;
+        selectedTargetGroupId = null;
+        selectedGroupStageId = null;
+        newGroupName = "";
+        newStageName = "";
+        StateHasChanged();
+    }
+
+    // ИСПРАВЛЕНО: метод с проверкой на null
+    private async Task ExecuteTargetAction()
+    {
+        try
+        {
+            // Отладка - в самом начале метода
+            Console.WriteLine($"=== ExecuteTargetAction ===");
+            Console.WriteLine($"targetType: {targetType}");
+            Console.WriteLine($"selectedTargetStageId: {selectedTargetStageId}");
+            Console.WriteLine($"selectedGroupStageId: {selectedGroupStageId}");
+            Console.WriteLine($"selectedTargetGroupId: {selectedTargetGroupId}");
+            Console.WriteLine($"newGroupName: {newGroupName}");
+            Console.WriteLine($"newStageName: {newStageName}");
+            Console.WriteLine($"selectedItems count: {selectedItems.Count}");
+
+            isSaving = true;
+            StateHasChanged();
+
+            var itemsToProcess = items.Where(i => selectedItems.Contains(i.Id)).ToList();
+            var isCopy = dialogMode == "copy";
+            int processedCount = 0;
+
+            // Определяем целевые StageId и GroupId
+            int targetStageId = 0;
+            int? targetGroupId = null;
+
+            if (targetType == "stage")
+            {
+                if (selectedTargetStageId == -1 && !string.IsNullOrWhiteSpace(newStageName))
+                {
+                    // Создаем новый этап
+                    var newStage = new
+                    {
+                        EstimateId = Id,
+                        Name = newStageName,
+                        Description = "",
+                        OrderIndex = stages.Count,
+                        IsExpanded = true
+                    };
+                    
+                    var stageResponse = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateStages", newStage);
+                    if (stageResponse.IsSuccessStatusCode)
+                    {
+                        var createdStage = await stageResponse.Content.ReadFromJsonAsync<EstimateStage>();
+                        if (createdStage != null)
+                        {
+                            targetStageId = createdStage.Id;
+                            stages.Add(createdStage);
+                            Console.WriteLine($"✅ Создан новый этап: {newStageName} (ID: {targetStageId})");
+                        }
+                    }
+                }
+                else if (selectedTargetStageId > 0)
+                {
+                    targetStageId = selectedTargetStageId.Value;
+                }
+            }
+            else if (targetType == "group")
+            {
+                if (selectedTargetGroupId == -1 && !string.IsNullOrWhiteSpace(newGroupName) && selectedGroupStageId.HasValue)
+                {
+                    // Создаем новую группу
+                    var newGroup = new
+                    {
+                        stageId = selectedGroupStageId.Value,
+                        name = newGroupName,
+                        orderIndex = groups.Count(g => g.StageId == selectedGroupStageId.Value),
+                        isExpanded = true
+                    };
+                    
+                    var groupResponse = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItemGroups", newGroup);
+                    if (groupResponse.IsSuccessStatusCode)
+                    {
+                        var createdGroup = await groupResponse.Content.ReadFromJsonAsync<EstimateItemGroup>();
+                        if (createdGroup != null)
+                        {
+                            targetStageId = selectedGroupStageId.Value;
+                            targetGroupId = createdGroup.Id;
+                            groups.Add(createdGroup);
+                            Console.WriteLine($"✅ Создана новая группа: {newGroupName} (ID: {targetGroupId}) в этапе {targetStageId}");
+                        }
+                    }
+                }
+                else if (selectedTargetGroupId > 0)
+                {
+                    var group = groups.FirstOrDefault(g => g.Id == selectedTargetGroupId);
+                    if (group != null)
+                    {
+                        targetStageId = group.StageId ?? 0;
+                        targetGroupId = selectedTargetGroupId;
+                        Console.WriteLine($"✅ Выбрана существующая группа: {group.Name} (ID: {targetGroupId}) в этапе {targetStageId}");
+                    }
+                }
+                else if (selectedGroupStageId.HasValue)
+                {
+                    // Без группы, только этап
+                    targetStageId = selectedGroupStageId.Value;
+                    targetGroupId = null;
+                    Console.WriteLine($"✅ Выбрано размещение без группы в этапе {targetStageId}");
+                }
+            }
+            else if (targetType == "ungrouped")
+            {
+                if (selectedTargetStageId > 0)
+                {
+                    targetStageId = selectedTargetStageId.Value;
+                    targetGroupId = null;
+                    Console.WriteLine($"✅ Выбрано размещение без группы в этапе {targetStageId}");
+                }
+            }
+
+            if (targetStageId == 0)
+            {
+                Console.WriteLine("❌ targetStageId = 0, операция прервана");
+                await JS.InvokeVoidAsync("alert", "❌ Не удалось определить целевую позицию");
+                return;
+            }
+
+            Console.WriteLine($"🎯 Целевой StageId: {targetStageId}, GroupId: {targetGroupId}");
+            Console.WriteLine($"📦 Обрабатывается {itemsToProcess.Count} позиций, режим: {(isCopy ? "копирование" : "перемещение")}");
+
+            // Выполняем копирование или перемещение
+            foreach (var item in itemsToProcess)
+            {
+                if (isCopy)
+                {
+                    var newItem = new
+                    {
+                        EstimateId = Id,
+                        GroupId = targetGroupId,
+                        StageId = targetStageId,
+                        Name = item.Name,
+                        Unit = item.Unit,
+                        Quantity = item.Quantity,
+                        Price = item.Price,
+                        Markup = item.Markup,
+                        Type = item.Type,
+                        OrderIndex = items.Count + processedCount,
+                        CustomerPrice = item.CustomerPrice
+                    };
+
+                    var response = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItems", newItem);
+                    if (response.IsSuccessStatusCode) 
+                    {
+                        processedCount++;
+                        Console.WriteLine($"✅ Позиция {item.Id} скопирована");
+                    }
+                    else
+                    {
+                        var error = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"❌ Ошибка копирования позиции {item.Id}: {error}");
+                    }
+                }
+                else // перемещение
+                {
+                    var updateItem = new
+                    {
+                        item.Id,
+                        item.Name,
+                        item.Unit,
+                        item.Quantity,
+                        item.Price,
+                        item.Markup,
+                        item.Type,
+                        CustomerPrice = item.CustomerPrice,
+                        StageId = targetStageId,
+                        GroupId = targetGroupId
+                    };
+
+                    var response = await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItems/{item.Id}", updateItem);
+                    if (response.IsSuccessStatusCode) 
+                    {
+                        processedCount++;
+                        Console.WriteLine($"✅ Позиция {item.Id} перемещена");
+                    }
+                    else
+                    {
+                        var error = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"❌ Ошибка перемещения позиции {item.Id}: {error}");
+                    }
+                }
+            }
+
+            await LoadData();
+            selectedItems.Clear();
+            StateHasChanged();
+            CloseTargetSelection();
+            await NotifyChanges();
+
+            if (processedCount > 0)
+            {
+                await JS.InvokeVoidAsync("alert", 
+                    isCopy 
+                        ? $"✅ {processedCount} из {itemsToProcess.Count} позиций скопировано" 
+                        : $"✅ {processedCount} из {itemsToProcess.Count} позиций перемещено");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Ошибка при выполнении действия: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+            await JS.InvokeVoidAsync("alert", $"❌ Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleStatusDropdown()
+    {
+        showStatusDropdown = !showStatusDropdown;
+        StateHasChanged();
+    }
+
     private async Task NotifyChanges()
     {
         if (estimate != null)
@@ -1171,24 +1687,19 @@
         Console.WriteLine($"🗑️ Estimate компонент освобожден для ID: {Id}");
     }
 
-    private bool GetStageExpanded(int stageId) => stageExpandedState.ContainsKey(stageId) ? stageExpandedState[stageId] : true;
-    private bool GetGroupExpanded(int groupId) => groupExpandedState.ContainsKey(groupId) ? groupExpandedState[groupId] : true;
+    private bool GetStageExpanded(int stageId) => stageExpandedState.TryGetValue(stageId, out bool expanded) ? expanded : true;
+
+    private bool GetGroupExpanded(int groupId) => groupExpandedState.TryGetValue(groupId, out bool expanded) ? expanded : true;
 
     private void ToggleStage(int stageId)
     {
-        if (stageExpandedState.ContainsKey(stageId))
-            stageExpandedState[stageId] = !stageExpandedState[stageId];
-        else
-            stageExpandedState[stageId] = false;
+        stageExpandedState[stageId] = !GetStageExpanded(stageId);
         StateHasChanged();
     }
 
     private void ToggleGroup(int groupId)
     {
-        if (groupExpandedState.ContainsKey(groupId))
-            groupExpandedState[groupId] = !groupExpandedState[groupId];
-        else
-            groupExpandedState[groupId] = false;
+        groupExpandedState[groupId] = !GetGroupExpanded(groupId);
         StateHasChanged();
     }
 
@@ -1409,14 +1920,12 @@
 
     private async Task AddItem()
     {
-        // Проверяем, что название заполнено
         if (string.IsNullOrWhiteSpace(newItem.Name))
         {
             await JS.InvokeVoidAsync("alert", "Заполните наименование позиции");
             return;
         }
 
-        // ВАЖНО: Проверяем, что StageId установлен
         if (!newItem.StageId.HasValue)
         {
             await JS.InvokeVoidAsync("alert", "Ошибка: не выбран этап. Пожалуйста, закройте и откройте модальное окно заново.");
@@ -1424,7 +1933,6 @@
             return;
         }
 
-        // Проверка на создание новой группы
         if (newItem.GroupId == -1)
         {
             isCreatingNewGroupInAdd = true;
@@ -1438,10 +1946,9 @@
             isSaving = true;
             StateHasChanged();
 
-            // Логируем отправляемые данные
             Console.WriteLine($"📤 Отправка данных в API:");
             Console.WriteLine($"   - EstimateId: {Id}");
-            Console.WriteLine($"   - StageId: {newItem.StageId} (ОБЯЗАТЕЛЬНО)");
+            Console.WriteLine($"   - StageId: {newItem.StageId}");
             Console.WriteLine($"   - GroupId: {newItem.GroupId}");
             Console.WriteLine($"   - Name: {newItem.Name}");
             Console.WriteLine($"   - Quantity: {newItem.Quantity}");
@@ -1633,34 +2140,188 @@
     }
 
     private async Task ShowGroupModal()
+{
+    if (selectedItems.Count == 0)
     {
-        if (selectedItems.Count == 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Выберите позиции для группирования");
-            return;
-        }
-
-        var itemsInGroups = items.Where(i => selectedItems.Contains(i.Id) && i.GroupId.HasValue).ToList();
-        
-        if (itemsInGroups.Any())
-        {
-            var message = itemsInGroups.Count == 1 
-                ? "Выбранная позиция уже находится в группе. При создании новой группы она будет перемещена в новую группу. Продолжить?"
-                : $"Выбранные позиции ({itemsInGroups.Count} шт.) уже находятся в группах. При создании новой группы они будут перемещены в новую группу. Продолжить?";
-            
-            var confirmed = await JS.InvokeAsync<bool>("confirm", message);
-            if (!confirmed)
-            {
-                return;
-            }
-        }
-        
-        newGroupName = $"Группа {DateTime.Now:dd.MM.yy HH:mm}";
-        selectedGroupStageId = null;
-        showGroupModal = true;
-        StateHasChanged();
+        await JS.InvokeVoidAsync("alert", "Выберите позиции для группирования");
+        return;
     }
 
+    // Проверяем, есть ли у выбранных позиций StageId
+    var itemsWithoutStage = items.Where(i => selectedItems.Contains(i.Id) && (!i.StageId.HasValue || i.StageId == 0)).ToList();
+    
+    if (itemsWithoutStage.Any())
+    {
+        var message = itemsWithoutStage.Count == 1
+            ? "Выбранная позиция не привязана к этапу. После создания группы она будет автоматически привязана к выбранному этапу. Продолжить?"
+            : $"Выбрано {itemsWithoutStage.Count} позиций без этапа. После создания группы они будут автоматически привязаны к выбранному этапу. Продолжить?";
+        
+        var confirmed = await JS.InvokeAsync<bool>("confirm", message);
+        if (!confirmed)
+        {
+            return;
+        }
+    }
+
+    var itemsInGroups = items.Where(i => selectedItems.Contains(i.Id) && i.GroupId.HasValue).ToList();
+    
+    if (itemsInGroups.Any())
+    {
+        var message = itemsInGroups.Count == 1 
+            ? "Выбранная позиция уже находится в группе. При создании новой группы она будет перемещена в новую группу. Продолжить?"
+            : $"Выбранные позиции ({itemsInGroups.Count} шт.) уже находятся в группах. При создании новой группы они будут перемещены в новую группу. Продолжить?";
+        
+        var confirmed = await JS.InvokeAsync<bool>("confirm", message);
+        if (!confirmed)
+        {
+            return;
+        }
+    }
+    
+    newGroupName = $"Группа {DateTime.Now:dd.MM.yy HH:mm}";
+    selectedGroupStageId = null; // Сбрасываем перед открытием
+    showGroupModal = true;
+    StateHasChanged();
+    
+    // Отладка
+    Console.WriteLine("=== ShowGroupModal ===");
+    Console.WriteLine($"stages.Count: {stages.Count}");
+    foreach (var stage in stages)
+    {
+        Console.WriteLine($"  Stage: {stage.Id} - {stage.Name}");
+    }
+}
+
+private async Task CreateGroupAndMove()
+{
+    Console.WriteLine($"=== CreateGroupAndMove ===");
+    Console.WriteLine($"newGroupName: '{newGroupName}'");
+    Console.WriteLine($"selectedGroupStageId: {selectedGroupStageId}");
+    Console.WriteLine($"selectedItems count: {selectedItems.Count}");
+
+    if (string.IsNullOrWhiteSpace(newGroupName))
+    {
+        await JS.InvokeVoidAsync("alert", "Введите название группы");
+        return;
+    }
+
+    if (!selectedGroupStageId.HasValue)
+    {
+        await JS.InvokeVoidAsync("alert", "Выберите этап для создания группы");
+        return;
+    }
+
+    try
+    {
+        isSaving = true;
+        StateHasChanged();
+
+        int targetStageId = selectedGroupStageId.Value;
+
+        // 1. Создаем новую группу
+        var newGroup = new
+        {
+            stageId = targetStageId,
+            name = newGroupName,
+            orderIndex = groups.Count(g => g.StageId == targetStageId),
+            isExpanded = true
+        };
+
+        Console.WriteLine($"Создание группы: {System.Text.Json.JsonSerializer.Serialize(newGroup)}");
+
+        var groupResponse = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItemGroups", newGroup);
+        
+        if (groupResponse.IsSuccessStatusCode)
+        {
+            var createdGroup = await groupResponse.Content.ReadFromJsonAsync<EstimateItemGroup>();
+            if (createdGroup != null)
+            {
+                Console.WriteLine($"✅ Группа создана с ID: {createdGroup.Id}");
+                
+                // 2. Получаем выбранные позиции
+                var itemsToProcess = items.Where(i => selectedItems.Contains(i.Id)).ToList();
+                Console.WriteLine($"Перемещаем {itemsToProcess.Count} позиций");
+                
+                int successCount = 0;
+                
+                // 3. Обновляем каждую позицию отдельно
+                foreach (var item in itemsToProcess)
+                {
+                    try
+                    {
+                        // Создаем объект для обновления в правильном формате
+                        var updateItem = new
+                        {
+                            id = item.Id,
+                            name = item.Name,
+                            unit = item.Unit,
+                            quantity = item.Quantity,
+                            price = item.Price,
+                            markup = item.Markup,
+                            type = item.Type,
+                            customerPrice = item.CustomerPrice,
+                            stageId = targetStageId,
+                            groupId = createdGroup.Id,
+                            estimateId = item.EstimateId
+                        };
+                        
+                        Console.WriteLine($"Обновление позиции {item.Id}: {System.Text.Json.JsonSerializer.Serialize(updateItem)}");
+                        
+                        var updateResponse = await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItems/{item.Id}", updateItem);
+                        
+                        if (updateResponse.IsSuccessStatusCode)
+                        {
+                            Console.WriteLine($"✅ Позиция {item.Id} обновлена");
+                            successCount++;
+                        }
+                        else
+                        {
+                            var errorContent = await updateResponse.Content.ReadAsStringAsync();
+                            Console.WriteLine($"❌ Ошибка обновления позиции {item.Id}: {updateResponse.StatusCode} - {errorContent}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Исключение при обновлении позиции {item.Id}: {ex.Message}");
+                    }
+                }
+
+                // 4. Перезагружаем данные
+                Console.WriteLine("Перезагрузка данных...");
+                await LoadData();
+                
+                selectedItems.Clear();
+                CloseGroupModal();
+                await NotifyChanges();
+                
+                if (successCount > 0)
+                {
+                    await JS.InvokeVoidAsync("alert", $"✅ Группа '{newGroupName}' создана, {successCount} позиций перемещено");
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("alert", $"⚠️ Группа создана, но позиции не перемещены. Проверьте консоль для деталей.");
+                }
+            }
+        }
+        else
+        {
+            var error = await groupResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"❌ Ошибка создания группы: {groupResponse.StatusCode} - {error}");
+            await JS.InvokeVoidAsync("alert", $"Ошибка при создании группы: {groupResponse.StatusCode}");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Ошибка: {ex.Message}");
+        await JS.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
+    }
+    finally
+    {
+        isSaving = false;
+        StateHasChanged();
+    }
+}
     private void CloseGroupModal()
     {
         showGroupModal = false;
@@ -1669,90 +2330,60 @@
         StateHasChanged();
     }
 
-    private async Task CreateGroupAndMove()
+   private async Task ForceUpdateItem(int itemId, int stageId, int groupId)
+{
+    try
     {
-        if (string.IsNullOrWhiteSpace(newGroupName))
+        var item = items.FirstOrDefault(i => i.Id == itemId);
+        if (item == null) return;
+
+        var updateItem = new
         {
-            await JS.InvokeVoidAsync("alert", "Введите название группы");
-            return;
+            item.Id,
+            item.Name,
+            item.Unit,
+            item.Quantity,
+            item.Price,
+            item.Markup,
+            item.Type,
+            CustomerPrice = item.CustomerPrice,
+            StageId = stageId,
+            GroupId = groupId
+        };
+
+        var response = await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItems/{itemId}", updateItem);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"✅ Позиция {itemId} принудительно обновлена");
         }
-
-        if (!selectedGroupStageId.HasValue)
+        else
         {
-            await JS.InvokeVoidAsync("alert", "Выберите этап для создания группы");
-            return;
-        }
-
-        try
-        {
-            isSaving = true;
-            StateHasChanged();
-
-            int targetStageId = selectedGroupStageId.Value;
-
-            var newGroup = new
-            {
-                stageId = targetStageId,
-                name = newGroupName,
-                orderIndex = groups.Count(g => g.StageId == targetStageId),
-                isExpanded = true
-            };
-
-            Console.WriteLine($"Создание группы в этапе {targetStageId}: {System.Text.Json.JsonSerializer.Serialize(newGroup)}");
-
-            var response = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItemGroups", newGroup);
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var createdGroup = await response.Content.ReadFromJsonAsync<EstimateItemGroup>();
-                if (createdGroup != null)
-                {
-                    Console.WriteLine($"✅ Группа создана с ID: {createdGroup.Id}");
-                    
-                    var orders = selectedItems.Select((id, index) => new
-                    {
-                        id = id,
-                        orderIndex = index,
-                        groupId = createdGroup.Id
-                    }).ToList();
-
-                    var reorderResponse = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItems/reorder", orders);
-                    
-                    if (reorderResponse.IsSuccessStatusCode)
-                    {
-                        await LoadData();
-                        selectedItems.Clear();
-                        CloseGroupModal();
-                        await NotifyChanges();
-                        
-                        await JS.InvokeVoidAsync("alert", $"✅ Группа '{newGroupName}' создана, {selectedItems.Count} позиций перемещено");
-                    }
-                    else
-                    {
-                        var error = await reorderResponse.Content.ReadAsStringAsync();
-                        Console.WriteLine($"❌ Ошибка перемещения: {error}");
-                        await JS.InvokeVoidAsync("alert", $"Группа создана, но ошибка при перемещении: {reorderResponse.StatusCode}");
-                    }
-                }
-            }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"❌ Ошибка создания группы: {error}");
-                await JS.InvokeVoidAsync("alert", $"Ошибка при создании группы: {response.StatusCode}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Ошибка создания группы: {ex.Message}");
-            await JS.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
-        }
-        finally
-        {
-            isSaving = false;
-            StateHasChanged();
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"❌ Ошибка принудительного обновления {itemId}: {error}");
         }
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Исключение при принудительном обновлении {itemId}: {ex.Message}");
+    }
+}
+private async Task RefreshGroups()
+{
+    try
+    {
+        var updatedGroups = await Http.GetFromJsonAsync<List<EstimateItemGroup>>($"http://localhost:5050/api/EstimateItemGroups/by-estimate/{Id}");
+        if (updatedGroups != null)
+        {
+            groups = updatedGroups;
+            Console.WriteLine($"🔄 Группы обновлены: {groups.Count} групп");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Ошибка обновления групп: {ex.Message}");
+    }
+}
 
     private void ToggleCopyDropdown()
     {

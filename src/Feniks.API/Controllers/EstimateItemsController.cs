@@ -71,37 +71,39 @@ public class EstimateItemsController : ControllerBase
         return item;
     }
     
+   
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateItem(int id, EstimateItem item)
+public async Task<IActionResult> UpdateItem(int id, EstimateItem item)
+{
+    if (id != item.Id) return BadRequest();
+
+    var existingItem = await _context.EstimateItems.FindAsync(id);
+    if (existingItem == null) return NotFound();
+
+    existingItem.Name = item.Name;
+    existingItem.Unit = item.Unit;
+    existingItem.Quantity = item.Quantity;
+    existingItem.Price = item.Price;
+    existingItem.Markup = item.Markup;
+    existingItem.Type = item.Type;
+    existingItem.CustomerPrice = item.CustomerPrice;
+    existingItem.StageId = item.StageId;
+    existingItem.GroupId = item.GroupId;
+
+    try
     {
-        if (id != item.Id) return BadRequest();
-
-        var existingItem = await _context.EstimateItems.FindAsync(id);
-        if (existingItem == null) return NotFound();
-
-        existingItem.Name = item.Name;
-        existingItem.Unit = item.Unit;
-        existingItem.Quantity = item.Quantity;
-        existingItem.Price = item.Price;
-        existingItem.Markup = item.Markup;
-        existingItem.Type = item.Type;
-        existingItem.CustomerPrice = item.CustomerPrice;
-        existingItem.StageId = item.StageId;
-
-        try
-        {
-            await _context.SaveChangesAsync();
-            
-            // Пересчитываем итоги сметы
-            await RecalculateEstimate(existingItem.EstimateId);
-            
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { error = ex.Message });
-        }
+        await _context.SaveChangesAsync();
+        
+        // Пересчитываем итоги сметы
+        await RecalculateEstimate(existingItem.EstimateId);
+        
+        return Ok();
     }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { error = ex.Message });
+    }
+}
     
     [HttpPost("reorder")]
     public async Task<IActionResult> ReorderItems([FromBody] List<ItemOrder> orders)

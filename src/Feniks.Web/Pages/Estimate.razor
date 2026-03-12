@@ -51,7 +51,7 @@
                 <div>
                     <div class="d-flex align-items-center gap-3 mb-2">
                         <h1 class="h3 mb-0">@estimate.Name</h1>
-                        <span class="h3 mb-0 text-success fw-bold">@customerTotal.ToString("N0") ₽</span>
+                        <span class="h3 mb-0 text-success fw-bold">@FormatNumber(customerTotal) ₽</span>
                     </div>
                     <div class="d-flex gap-4 text-muted flex-wrap">
                         <span><i class="bi bi-building me-1"></i> Объект: @objectName</span>
@@ -85,12 +85,40 @@
                         <span class="text-muted"><i class="bi bi-lock me-1"></i>Фиксация цены заказчика</span>
                     </div>
                 </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary">Экспорт</button>
-                    <button class="btn btn-sm btn-outline-secondary">Обновить цены</button>
-                    <button class="btn btn-sm btn-outline-secondary">Создать копию</button>
-                    <button class="btn btn-sm btn-outline-secondary">Архивировать</button>
-                </div>
+               <div class="d-flex gap-2">
+    <button class="btn btn-sm btn-outline-secondary">Экспорт</button>
+    <button class="btn btn-sm btn-outline-secondary">Обновить цены</button>
+    <button class="btn btn-sm btn-outline-secondary">Создать копию</button>
+    
+    <!-- Кнопка печати с Blazor-совместимым dropdown -->
+    <div style="position: relative; display: inline-block;" @onclick:stopPropagation="true">
+        <button class="btn btn-sm btn-outline-secondary" @onclick="TogglePrintDropdown" style="display: inline-flex; align-items: center;">
+            <i class="bi bi-printer me-1"></i>Печать
+            <i class="bi bi-chevron-down ms-1 small"></i>
+        </button>
+        
+        @if (showPrintDropdown)
+        {
+            <div style="position: absolute; top: 35px; right: 0; z-index: 1000; background: white; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.175); min-width: 200px; padding: 8px 0;" @onclick:stopPropagation="true">
+                <button class="dropdown-item w-100 text-start" @onclick='() => PrintDocument("estimate")' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none;">
+                    <i class="bi bi-file-text me-2"></i>Смета
+                </button>
+                <button class="dropdown-item w-100 text-start" @onclick='() => PrintDocument("ks2")' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none;">
+                    <i class="bi bi-file-earmark-check me-2"></i>КС-2 (Акт работ)
+                </button>
+                <button class="dropdown-item w-100 text-start" @onclick='() => PrintDocument("ks3")' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none;">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>КС-3 (Справка)
+                </button>
+                <div style="height: 1px; background-color: #e9ecef; margin: 8px 0;"></div>
+                <button class="dropdown-item w-100 text-start" @onclick='() => PrintDocument("invoice")' style="display: block; width: 100%; padding: 8px 16px; text-align: left; background: none; border: none;">
+                    <i class="bi bi-receipt me-2"></i>Счет на оплату
+                </button>
+            </div>
+        }
+    </div>
+    
+    <button class="btn btn-sm btn-outline-secondary">Архивировать</button>
+</div>
             </div>
         </div>
 
@@ -105,9 +133,9 @@
                         <span class="fw-bold">Финансовые показатели</span>
                     </div>
                     <div class="d-flex gap-4">
-                        <span class="text-primary fw-bold">Себестоимость: @totalCost.ToString("N0") ₽</span>
-                        <span class="fw-bold" style="color: #b45f06;">Прибыль: @profitTotal.ToString("N0") ₽</span>
-                        <span class="text-success fw-bold">Для заказчика: @customerTotal.ToString("N0") ₽</span>
+                        <span class="text-primary fw-bold">Себестоимость: @FormatNumber(totalCost) ₽</span>
+                        <span class="fw-bold" style="color: #b45f06;">Прибыль: @FormatNumber(profitTotal) ₽</span>
+                        <span class="text-success fw-bold">Для заказчика: @FormatNumber(customerTotal) ₽</span>
                     </div>
                 </div>
             </div>
@@ -122,19 +150,19 @@
                                     <h6 class="text-muted mb-3">Себестоимость по типам</h6>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Работы</span>
-                                        <span class="fw-bold">@workCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold">@FormatNumber(workCost) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Материалы</span>
-                                        <span class="fw-bold">@materialCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold">@FormatNumber(materialCost) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Механизмы</span>
-                                        <span class="fw-bold">@machineryCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold">@FormatNumber(machineryCost) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <span>Доставка</span>
-                                        <span class="fw-bold">@deliveryCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold">@FormatNumber(deliveryCost) ₽</span>
                                     </div>
                                 </div>
                             </div>
@@ -145,19 +173,19 @@
                                     <h6 class="text-muted mb-3">Прибыль по типам</h6>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Работы</span>
-                                        <span class="fw-bold" style="color: #b45f06;">@profitWork.ToString("N0") ₽</span>
+                                        <span class="fw-bold" style="color: #b45f06;">@FormatNumber(profitWork) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Материалы</span>
-                                        <span class="fw-bold" style="color: #b45f06;">@profitMaterial.ToString("N0") ₽</span>
+                                        <span class="fw-bold" style="color: #b45f06;">@FormatNumber(profitMaterial) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Механизмы</span>
-                                        <span class="fw-bold" style="color: #b45f06;">@profitMachineryCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold" style="color: #b45f06;">@FormatNumber(profitMachineryCost) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <span>Доставка</span>
-                                        <span class="fw-bold" style="color: #b45f06;">@profitDelivery.ToString("N0") ₽</span>
+                                        <span class="fw-bold" style="color: #b45f06;">@FormatNumber(profitDelivery) ₽</span>
                                     </div>
                                 </div>
                             </div>
@@ -168,19 +196,19 @@
                                     <h6 class="text-muted mb-3">Для заказчика по типам</h6>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Работы</span>
-                                        <span class="fw-bold text-success">@customerWorkCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold text-success">@FormatNumber(customerWorkCost) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Материалы</span>
-                                        <span class="fw-bold text-success">@customerMaterialCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold text-success">@FormatNumber(customerMaterialCost) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Механизмы</span>
-                                        <span class="fw-bold text-success">@customerMachineryCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold text-success">@FormatNumber(customerMachineryCost) ₽</span>
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <span>Доставка</span>
-                                        <span class="fw-bold text-success">@customerDeliveryCost.ToString("N0") ₽</span>
+                                        <span class="fw-bold text-success">@FormatNumber(customerDeliveryCost) ₽</span>
                                     </div>
                                 </div>
                             </div>
@@ -235,9 +263,9 @@
                                     }
                                 </div>
                                 <div class="d-flex align-items-center gap-3" @onclick:stopPropagation="true">
-                                    <span class="badge bg-light text-dark">💰 @GetStageTotal(stage.Id).ToString("N0") ₽</span>
-                                    <span class="badge" style="background-color: #ffe0b5; color: #b45f06;">📈 @GetStageProfit(stage.Id).ToString("N0") ₽</span>
-                                    <span class="badge bg-success text-white">📊 @GetStageCustomerTotal(stage.Id).ToString("N0") ₽</span>
+                                    <span class="badge bg-light text-dark"><span class="me-1">💰</span>@FormatNumber(GetStageTotal(stage.Id)) ₽</span>
+                                    <span class="badge" style="background-color: #ffe0b5; color: #b45f06;"><span class="me-1">📈</span>@FormatNumber(GetStageProfit(stage.Id)) ₽</span>
+                                    <span class="badge bg-success text-white"><span class="me-1">📊</span>@FormatNumber(GetStageCustomerTotal(stage.Id)) ₽</span>
                                 </div>
                             </div>
                         </div>
@@ -321,9 +349,9 @@
                                                             }
                                                             
                                                             <span class="ms-auto me-3">
-                                                                <span class="badge bg-light text-dark me-2">💰 @GetGroupTotal(group.Id).ToString("N0") ₽</span>
-                                                                <span class="badge me-2" style="background-color: #ffe0b5; color: #b45f06;">📈 @GetGroupProfit(group.Id).ToString("N0") ₽</span>
-                                                                <span class="badge bg-success">📊 @GetGroupCustomerTotal(group.Id).ToString("N0") ₽</span>
+                                                                <span class="badge bg-light text-dark me-2"><span class="me-1">💰</span>@FormatNumber(GetGroupTotal(group.Id)) ₽</span>
+                                                                <span class="badge me-2" style="background-color: #ffe0b5; color: #b45f06;"><span class="me-1">📈</span>@FormatNumber(GetGroupProfit(group.Id)) ₽</span>
+                                                                <span class="badge bg-success"><span class="me-1">📊</span>@FormatNumber(GetGroupCustomerTotal(group.Id)) ₽</span>
                                                             </span>
                                                         </div>
                                                     </td>
@@ -358,10 +386,10 @@
                                                             <td><input type="text" class="form-control form-control-sm" @bind="item.Unit" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
                                                             <td><input type="number" class="form-control form-control-sm" @bind="item.Quantity" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
                                                             <td><input type="number" class="form-control form-control-sm" @bind="item.Price" @bind:event="oninput" @onblur="() => OnPriceChanged(item)" /></td>
-                                                            <td class="fw-bold">@total.ToString("N0") ₽</td>
+                                                            <td class="fw-bold">@FormatNumber(total) ₽</td>
                                                             <td><input type="number" class="form-control form-control-sm markup-field" @bind="item.Markup" @bind:event="oninput" @onblur="() => OnMarkupChanged(item)" /></td>
                                                             <td><input type="number" class="form-control form-control-sm" @bind="item.CustomerPrice" @bind:event="oninput" @onblur="() => OnCustomerPriceChanged(item)" /></td>
-                                                            <td class="fw-bold text-success">@customerTotal.ToString("N0") ₽</td>
+                                                            <td class="fw-bold text-success">@FormatNumber(customerTotal) ₽</td>
                                                             <td><button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item.Id)"><i class="bi bi-trash"></i></button></td>
                                                         </tr>
                                                     }
@@ -401,10 +429,10 @@
                                                         <td><input type="text" class="form-control form-control-sm" @bind="item.Unit" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
                                                         <td><input type="number" class="form-control form-control-sm" @bind="item.Quantity" @bind:event="oninput" @onblur="() => UpdateItem(item)" /></td>
                                                         <td><input type="number" class="form-control form-control-sm" @bind="item.Price" @bind:event="oninput" @onblur="() => OnPriceChanged(item)" /></td>
-                                                        <td class="fw-bold">@total.ToString("N0") ₽</td>
+                                                        <td class="fw-bold">@FormatNumber(total) ₽</td>
                                                         <td><input type="number" class="form-control form-control-sm markup-field" @bind="item.Markup" @bind:event="oninput" @onblur="() => OnMarkupChanged(item)" /></td>
                                                         <td><input type="number" class="form-control form-control-sm" @bind="item.CustomerPrice" @bind:event="oninput" @onblur="() => OnCustomerPriceChanged(item)" /></td>
-                                                        <td class="fw-bold text-success">@customerTotal.ToString("N0") ₽</td>
+                                                        <td class="fw-bold text-success">@FormatNumber(customerTotal) ₽</td>
                                                         <td><button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item.Id)"><i class="bi bi-trash"></i></button></td>
                                                     </tr>
                                                 }
@@ -434,9 +462,9 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                         <div>
                             <span class="fw-bold me-3">Выбрано позиций: @selectedItems.Count</span>
-                            <span class="me-3">💰 Себестоимость: @selectedSum.ToString("N0") ₽</span>
-                            <span class="me-3">📈 Прибыль: @selectedProfit.ToString("N0") ₽</span>
-                            <span class="text-success">📊 Для заказчика: @selectedCustomerSum.ToString("N0") ₽</span>
+                            <span class="me-3"><span class="me-1">💰</span>Себестоимость: @FormatNumber(selectedSum) ₽</span>
+                            <span class="me-3"><span class="me-1">📈</span>Прибыль: @FormatNumber(selectedProfit) ₽</span>
+                            <span class="text-success"><span class="me-1">📊</span>Для заказчика: @FormatNumber(selectedCustomerSum) ₽</span>
                         </div>
                         <div class="d-flex gap-2">
                             <!-- Кнопка группирования -->
@@ -454,7 +482,7 @@
                                 <i class="bi bi-folder-plus me-1"></i>Переместить
                             </button>
 
-                            <!-- Кнопка Разгруппировать (переместить в "без группы") -->
+                            <!-- Кнопка Разгруппировать -->
                             @if (selectedItems.Any(i => items.First(x => x.Id == i).GroupId.HasValue))
                             {
                                 <button class="btn btn-sm btn-outline-warning" @onclick="UngroupSelected">
@@ -622,7 +650,7 @@
                                 }
                             }
 
-                            <!-- Выбор "без группы" (разгруппировка) -->
+                            <!-- Выбор "без группы" -->
                             @if (targetType == "ungrouped")
                             {
                                 <div class="mb-3">
@@ -998,7 +1026,7 @@
     private bool showMoveDropdown = false;
 
     // Поля для копирования/перемещения
-    private bool showCopyMoveModal = false; // Это поле не используется, но оставлено для совместимости
+    private bool showCopyMoveModal = false;
     private string copyMoveMode = "";
     private string copyMoveTarget = "";
     private int? selectedTargetStageId;
@@ -1049,7 +1077,13 @@
     private string targetType = "";
     private string targetSelectionTitle = "";
     private string newStageName = "";
+    private bool showPrintDropdown = false;
 
+private void TogglePrintDropdown()
+{
+    showPrintDropdown = !showPrintDropdown;
+    StateHasChanged();
+}
     // ИСПРАВЛЕНО: условие для кнопки с проверкой на null
     private bool isTargetSelectionInvalid
     {
@@ -2533,11 +2567,12 @@
     }
 
     private void CloseAllDropdowns()
-    {
-        showCopyDropdown = false;
-        showMoveDropdown = false;
-        StateHasChanged();
-    }
+{
+    showCopyDropdown = false;
+    showMoveDropdown = false;
+    showPrintDropdown = false; // Добавьте эту строку
+    StateHasChanged();
+}
 
     private void ShowCopyMoveModal(string target, string mode)
     {
@@ -3110,4 +3145,55 @@
     }
 
     private decimal GetStageProfit(int stageId) => GetStageCustomerTotal(stageId) - GetStageTotal(stageId);
+
+    // Метод для безопасного форматирования чисел
+    private string FormatNumber(decimal value)
+    {
+        try
+        {
+            if (value >= 1_000_000_000)
+                return $"{(value / 1_000_000_000):F1} млрд";
+            if (value >= 1_000_000)
+                return $"{(value / 1_000_000):F1} млн";
+            if (value >= 1_000)
+                return $"{(value / 1_000):F1} тыс";
+            return value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch
+        {
+            return "0";
+        }
+    }
+
+    // НОВЫЙ МЕТОД: печать документа
+    private async Task PrintDocument(string type)
+{
+    try
+    {
+        showPrintDropdown = false; // Закрываем dropdown
+        isSaving = true;
+        StateHasChanged();
+        
+        string url = $"http://localhost:5050/api/Print/{type}/{Id}";
+        
+        if (type == "invoice" && estimate?.ContractorId.HasValue == true)
+        {
+            url += $"?contractorId={estimate.ContractorId}";
+        }
+        
+        Console.WriteLine($"🖨️ Печать документа: {url}");
+        
+        await JS.InvokeVoidAsync("open", url, "_blank");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Ошибка печати: {ex.Message}");
+        await JS.InvokeVoidAsync("alert", $"Ошибка при печати: {ex.Message}");
+    }
+    finally
+    {
+        isSaving = false;
+        StateHasChanged();
+    }
+}
 }

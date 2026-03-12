@@ -953,3 +953,22 @@ tr.table-primary td:first-child {
     color: #dc3545 !important;
     transform: scale(1.1);
 }
+/* ===== ОЧЕНЬ МЯГКОЕ ВЫДЕЛЕНИЕ (ПЕРСИКОВЫЙ) ===== */
+
+.tree-child-item.active-estimate {
+    background-color: rgba(255, 200, 150, 0.25) !important;
+    border-left: 4px solid #ffaa66 !important;
+    border-radius: 8px !important;
+}
+/* Стили для бейджей с иконками */
+.badge .me-1 {
+    display: inline-block;
+    margin-right: 4px;
+    font-size: inherit;
+}
+
+/* Для нижнего колонтитула */
+.me-3 .me-1 {
+    display: inline-block;
+    margin-right: 4px;
+}

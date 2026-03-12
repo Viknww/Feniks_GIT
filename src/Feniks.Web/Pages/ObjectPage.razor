@@ -17,20 +17,17 @@
     font-weight: 500;
     color: white;
     text-align: center;
-    min-width: 100px; /* Фиксированная минимальная ширина */
+    min-width: 100px;
     width: auto;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     transition: all 0.2s ease;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    /* Фиксируем размер шрифта */
     font-size: 12px;
     line-height: 1.4;
-    /* Запрещаем перенос */
     white-space: nowrap;
 }
 
-/* Базовый серый градиент для статуса по умолчанию */
 .status-badge {
     background: linear-gradient(135deg, rgba(107, 114, 128, 0.9) 0%, rgba(75, 85, 99, 0.9) 100%);
 }
@@ -72,6 +69,31 @@
 .status-badge.status-completed:hover {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);
 }
+
+/* Стили для компактных карточек */
+.compact-card {
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.compact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.stat-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
 </style>
 
 <div class="container py-4">
@@ -102,7 +124,7 @@
             </button>
         </div>
 
-        <!-- Компактные финансовые показатели в одну строку -->
+        <!-- Компактные финансовые показатели в одну строку с иконками -->
         <div class="row g-2 mb-4 row-cols-2 row-cols-sm-3 row-cols-md-6">
             <div class="col">
                 <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
@@ -378,15 +400,23 @@
         Navigation.NavigateTo($"/estimate/{estimateId}");
     }
 
+    // Метод для безопасного форматирования чисел
     private string FormatNumber(decimal value)
     {
-        if (value >= 1_000_000_000)
-            return $"{(value / 1_000_000_000):F1} млрд";
-        if (value >= 1_000_000)
-            return $"{(value / 1_000_000):F1} млн";
-        if (value >= 1_000)
-            return $"{(value / 1_000):F1} тыс";
-        return value.ToString("N0");
+        try
+        {
+            if (value >= 1_000_000_000)
+                return $"{(value / 1_000_000_000):F1} млрд";
+            if (value >= 1_000_000)
+                return $"{(value / 1_000_000):F1} млн";
+            if (value >= 1_000)
+                return $"{(value / 1_000):F1} тыс";
+            return value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch
+        {
+            return "0";
+        }
     }
 
     public void Dispose()

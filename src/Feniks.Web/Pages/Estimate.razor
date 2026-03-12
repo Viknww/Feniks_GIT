@@ -302,20 +302,23 @@
                                                             </span>
                                                             
                                                             @if (editingGroupId == group.Id)
-                                                            {
-                                                                <input type="text" class="form-control form-control-sm" @bind="editingGroupName" 
-                                                                       style="width: 250px;" @onkeydown="(e) => HandleGroupEnter(e, group)" 
-                                                                       @onclick:stopPropagation="true" />
-                                                                <button class="btn btn-sm btn-success ms-2" @onclick="() => SaveGroup(group)" @onclick:stopPropagation="true">✓</button>
-                                                                <button class="btn btn-sm btn-secondary ms-1" @onclick="CancelEditGroup" @onclick:stopPropagation="true">✗</button>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="fw-bold me-2">@group.Name</span>
-                                                                <button class="btn btn-sm btn-link py-0" @onclick="() => EditGroup(group)" @onclick:stopPropagation="true">
-                                                                    <i class="bi bi-pencil"></i>
-                                                                </button>
-                                                            }
+{
+    <input type="text" class="form-control form-control-sm" @bind="editingGroupName" 
+           style="width: 250px;" @onkeydown="(e) => HandleGroupEnter(e, group)" 
+           @onclick:stopPropagation="true" />
+    <button class="btn btn-sm btn-success ms-2" @onclick="() => SaveGroup(group)" @onclick:stopPropagation="true">✓</button>
+    <button class="btn btn-sm btn-secondary ms-1" @onclick="CancelEditGroup" @onclick:stopPropagation="true">✗</button>
+}
+else
+{
+    <span class="fw-bold me-2">@group.Name</span>
+    <button class="btn btn-sm btn-link py-0" @onclick="() => EditGroup(group)" @onclick:stopPropagation="true" title="Редактировать">
+        <i class="bi bi-pencil"></i>
+    </button>
+    <button class="btn btn-sm btn-link py-0 text-danger" @onclick="() => DeleteGroup(group.Id)" @onclick:stopPropagation="true" title="Удалить группу">
+        <i class="bi bi-trash"></i>
+    </button>
+}
                                                             
                                                             <span class="ms-auto me-3">
                                                                 <span class="badge bg-light text-dark me-2">💰 @GetGroupTotal(group.Id).ToString("N0") ₽</span>
@@ -1046,7 +1049,109 @@
     private string targetType = "";
     private string targetSelectionTitle = "";
     private string newStageName = "";
+    private async Task DeleteGroup(int groupId)
+{
+    var group = groups.FirstOrDefault(g => g.Id == groupId);
+    if (group == null) return;
+
+    // Проверяем, есть ли позиции в группе
+    var itemsInGroup = items.Where(i => i.GroupId == groupId).ToList();
     
+    var message = itemsInGroup.Any()
+        ? $"В группе '{group.Name}' есть {itemsInGroup.Count} позиций. Они будут перемещены в 'Позиции без группы'. Продолжить?"
+        : $"Удалить группу '{group.Name}'?";
+
+    if (await JS.InvokeAsync<bool>("confirm", message))
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            // Сначала обнуляем GroupId у всех позиций в группе
+            foreach (var item in itemsInGroup)
+            {
+                var updateItem = new
+                {
+                    item.Id,
+                    item.Name,
+                    item.Unit,
+                    item.Quantity,
+                    item.Price,
+                    item.Markup,
+                    item.Type,
+                    CustomerPrice = item.CustomerPrice,
+                    StageId = item.StageId,
+                    GroupId = (int?)null // Важно: явно устанавливаем null
+                };
+
+                var updateResponse = await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItems/{item.Id}", updateItem);
+                
+                if (!updateResponse.IsSuccessStatusCode)
+                {
+                    var error = await updateResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"❌ Ошибка при обновлении позиции {item.Id}: {error}");
+                }
+            }
+
+            // Затем удаляем саму группу
+            var response = await Http.DeleteAsync($"http://localhost:5050/api/EstimateItemGroups/{groupId}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"✅ Группа {groupId} удалена");
+                
+                // Важно: перезагружаем все данные, чтобы получить актуальное состояние
+                await LoadData();
+                
+                // Очищаем выделение, если были выбраны позиции из удаленной группы
+                selectedItems.RemoveWhere(id => itemsInGroup.Any(i => i.Id == id));
+                
+                await NotifyChanges();
+                
+                await JS.InvokeVoidAsync("alert", $"✅ Группа '{group.Name}' удалена, {itemsInGroup.Count} позиций перемещено в 'Позиции без группы'");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Ошибка удаления группы: {error}");
+                await JS.InvokeVoidAsync("alert", $"Ошибка при удалении группы: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Ошибка: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+}
+    private async Task RefreshItems()
+{
+    try
+    {
+        var updatedItems = await Http.GetFromJsonAsync<List<EstimateItem>>($"http://localhost:5050/api/EstimateItems/by-estimate/{Id}");
+        if (updatedItems != null)
+        {
+            items = updatedItems;
+            Console.WriteLine($"🔄 Позиции обновлены: {items.Count} позиций");
+            
+            // Логируем статистику после обновления
+            var itemsWithGroup = items.Count(i => i.GroupId.HasValue);
+            var itemsWithoutGroup = items.Count(i => !i.GroupId.HasValue);
+            Console.WriteLine($"   - В группах: {itemsWithGroup}");
+            Console.WriteLine($"   - Без группы: {itemsWithoutGroup}");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Ошибка обновления позиций: {ex.Message}");
+    }
+}
     // ИСПРАВЛЕНО: условие для кнопки с проверкой на null
     private bool isTargetSelectionInvalid
     {

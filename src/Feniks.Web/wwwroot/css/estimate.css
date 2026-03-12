@@ -939,3 +939,17 @@ tr.table-primary td:first-child {
     background-color: #f8f9fa;
     padding-left: 1.5rem;
 }
+/* Стили для кнопок групп */
+.tree-item-header .btn-link {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.tree-item-header .btn-link:hover {
+    opacity: 1;
+}
+
+.tree-item-header .btn-link.text-danger:hover {
+    color: #dc3545 !important;
+    transform: scale(1.1);
+}

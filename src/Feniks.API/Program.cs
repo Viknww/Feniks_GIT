@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Feniks.Shared.Data;
 using System.Text.Json.Serialization;
+using Feniks.API.Services;  // Добавлен using для ReportService
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,9 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.WriteIndented = true;
 });
+
+// Регистрация сервисов
+builder.Services.AddScoped<ReportService>();  // Регистрируем ReportService
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

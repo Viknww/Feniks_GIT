@@ -12,7 +12,8 @@ public class ConstructionObject
     public string Customer { get; set; } = string.Empty;
     public string? Address { get; set; }
     
-    // Статус удален - он не нужен для объектов
+    // ДОБАВЬТЕ ЭТО ПОЛЕ
+    public string Status { get; set; } = "Активен";  // Значение по умолчанию
     
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? StartDate { get; set; }

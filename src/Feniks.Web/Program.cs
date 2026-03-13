@@ -18,6 +18,6 @@ builder.Services.AddScoped<ReferenceItemService>();
 
 // Обновленные сервисы
 builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<DataSyncService>(); // НОВЫЙ сервис
+builder.Services.AddScoped<DataSyncService>();
 
 await builder.Build().RunAsync();

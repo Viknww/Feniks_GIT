@@ -33,8 +33,20 @@ public class ConstructionObjectsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ConstructionObject>> CreateConstructionObject(ConstructionObject obj)
     {
+        // Проверка обязательных полей
+        if (string.IsNullOrWhiteSpace(obj.Name))
+            return BadRequest(new { error = "Название объекта обязательно" });
+        
+        if (string.IsNullOrWhiteSpace(obj.Customer))
+            return BadRequest(new { error = "Заказчик обязателен" });
+        
+        // Устанавливаем значения по умолчанию
+        obj.CreatedAt = DateTime.Now;
+        obj.Status = obj.Status ?? "Активен";  // Если статус не передан, ставим "Активен"
+        
         _context.ConstructionObjects.Add(obj);
         await _context.SaveChangesAsync();
+        
         return CreatedAtAction(nameof(GetConstructionObject), new { id = obj.Id }, obj);
     }
     
@@ -42,7 +54,20 @@ public class ConstructionObjectsController : ControllerBase
     public async Task<IActionResult> UpdateConstructionObject(int id, ConstructionObject obj)
     {
         if (id != obj.Id) return BadRequest();
-        _context.Entry(obj).State = EntityState.Modified;
+        
+        // Проверка существования
+        var existingObj = await _context.ConstructionObjects.FindAsync(id);
+        if (existingObj == null) return NotFound();
+        
+        // Обновляем поля (сохраняем CreatedAt)
+        existingObj.Name = obj.Name;
+        existingObj.Customer = obj.Customer;
+        existingObj.Address = obj.Address;
+        existingObj.Description = obj.Description;
+        existingObj.Status = obj.Status ?? existingObj.Status;
+        existingObj.StartDate = obj.StartDate;
+        existingObj.EndDate = obj.EndDate;
+        
         await _context.SaveChangesAsync();
         return NoContent();
     }

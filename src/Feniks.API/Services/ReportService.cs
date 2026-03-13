@@ -1,3 +1,4 @@
+using FastReport.Data;
 using FastReport;
 using FastReport.Export.PdfSimple;
 using Feniks.Shared.Models;
@@ -169,22 +170,24 @@ public class ReportService
         }
         dataSet.Tables.Add(dtStages);
 
-        // Таблица Totals
+        // ========== ГЛАВНОЕ: ТАБЛИЦА TOTALS ==========
         var dtTotals = new DataTable("Totals");
         dtTotals.Columns.Add("WorkTotal", typeof(decimal));
         dtTotals.Columns.Add("MaterialTotal", typeof(decimal));
         dtTotals.Columns.Add("MachineryTotal", typeof(decimal));
         dtTotals.Columns.Add("DeliveryTotal", typeof(decimal));
         
+        // Вычисляем суммы по типам
         decimal workTotal = items.Where(i => i.Type == "P").Sum(i => i.Price * i.Quantity);
         decimal materialTotal = items.Where(i => i.Type == "M").Sum(i => i.Price * i.Quantity);
         decimal machineryTotal = items.Where(i => i.Type == "X").Sum(i => i.Price * i.Quantity);
         decimal deliveryTotal = items.Where(i => i.Type == "D").Sum(i => i.Price * i.Quantity);
         
+        // Добавляем одну строку с итогами
         dtTotals.Rows.Add(workTotal, materialTotal, machineryTotal, deliveryTotal);
         dataSet.Tables.Add(dtTotals);
 
-        // Таблица Company
+        // Таблица Company (опционально)
         var dtCompany = new DataTable("Company");
         dtCompany.Columns.Add("Name", typeof(string));
         dtCompany.Columns.Add("Phone", typeof(string));
@@ -199,7 +202,7 @@ public class ReportService
     }
 
     /// <summary>
-    /// Простая генерация PDF без шаблона
+    /// Простая генерация PDF без шаблона (запасной вариант)
     /// </summary>
     private async Task<byte[]> GenerateSimplePdf(int estimateId)
     {
@@ -248,7 +251,7 @@ public class ReportService
 
         // Заголовок
         var titleBand = new ReportTitleBand();
-        titleBand.Height = 1f;  // исправлено: string -> float
+        titleBand.Height = 1f;
         var titleText = new TextObject();
         titleText.Text = $"СМЕТА № {estimate.Id} от {estimate.CreatedAt:dd.MM.yyyy}";
         titleText.Font = new Font("Arial", 14f, FontStyle.Bold);
@@ -258,7 +261,7 @@ public class ReportService
 
         // Информация об объекте
         var headerBand = new PageHeaderBand();
-        headerBand.Height = 2f;  // исправлено: string -> float
+        headerBand.Height = 2f;
         
         var objText = new TextObject();
         objText.Text = $"Объект: {obj.Name}\nЗаказчик: {obj.Customer}\nАдрес: {obj.Address}";
@@ -269,12 +272,12 @@ public class ReportService
 
         // Таблица с позициями
         var dataBand = new DataBand();
-        dataBand.DataSource = report.GetDataSource("Feniks.Items");  // исправлено: вместо DataSourceName
-        dataBand.Height = 0.5f;  // исправлено: string -> float
+        dataBand.DataSource = report.GetDataSource("Feniks.Items");
+        dataBand.Height = 0.5f;
 
         // Заголовок таблицы
         var headerRow = new DataHeaderBand();
-        headerRow.Height = 0.7f;  // исправлено: string -> float
+        headerRow.Height = 0.7f;
         
         var col1Header = new TextObject();
         col1Header.Text = "№";
@@ -321,7 +324,7 @@ public class ReportService
 
         // Строки данных
         var dataRow = new DataBand();
-        dataRow.Height = 0.5f;  // исправлено: string -> float
+        dataRow.Height = 0.5f;
 
         var col1Data = new TextObject();
         col1Data.Text = "[Line#]";
@@ -368,7 +371,7 @@ public class ReportService
 
         // Итоги
         var footerBand = new ReportSummaryBand();
-        footerBand.Height = 1.5f;  // исправлено: string -> float
+        footerBand.Height = 1.5f;
 
         var totalLabel = new TextObject();
         totalLabel.Text = "ИТОГО ПО СМЕТЕ:";
@@ -386,4 +389,47 @@ public class ReportService
 
         page.Bands.Add(footerBand);
     }
+    public async Task InitializeTemplateWithData()
+{
+    using var report = new Report();
+    var templatePath = Path.Combine(_reportsPath, "EstimateTemplate.frx");
+    
+    if (!File.Exists(templatePath))
+    {
+        Console.WriteLine("❌ Шаблон не найден");
+        return;
+    }
+    
+    Console.WriteLine("📥 Загрузка шаблона...");
+    report.Load(templatePath);
+    
+    // Очищаем старые данные
+    report.Dictionary.Connections.Clear();
+    
+    // Загружаем тестовые данные (например, первую попавшуюся смету)
+    var firstEstimate = await _context.Estimates.FirstOrDefaultAsync();
+    if (firstEstimate == null)
+    {
+        Console.WriteLine("❌ Нет данных для инициализации");
+        return;
+    }
+    
+    Console.WriteLine($"📊 Загрузка данных для сметы {firstEstimate.Id}...");
+    var dataSet = await LoadEstimateData(firstEstimate.Id);
+    
+    // Регистрируем данные
+    report.RegisterData(dataSet, "Feniks");
+    
+    // Активируем все источники данных
+    foreach (DataSourceBase source in report.Dictionary.DataSources)
+    {
+        source.Enabled = true;
+        Console.WriteLine($"   - Источник: {source.Name}");
+    }
+    
+    // Сохраняем шаблон со структурой данных
+    report.Save(templatePath);
+    Console.WriteLine($"✅ Шаблон инициализирован и сохранен: {templatePath}");
+}
+
 }

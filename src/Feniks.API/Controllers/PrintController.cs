@@ -173,4 +173,19 @@ public class PrintController : ControllerBase
             return StatusCode(500, new { error = ex.Message, stackTrace = ex.StackTrace });
         }
     }
+
+    // ВРЕМЕННЫЙ МЕТОД: инициализация шаблона (ТОЛЬКО ОДИН РАЗ!)
+    [HttpGet("init-template")]
+    public async Task<IActionResult> InitializeTemplate()
+    {
+        try
+        {
+            await _reportService.InitializeTemplateWithData();
+            return Ok(new { message = "✅ Шаблон инициализирован успешно" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
 }

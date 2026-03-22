@@ -1,0 +1,225 @@
+@page "/reference-item/{id:int}/edit"
+@page "/reference-item/new/{referenceId:int}"
+@using Feniks.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">@(isNewItem ? "➕ Новая позиция" : "✏️ Редактирование позиции")</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Наименование -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Наименование *</label>
+                        <input type="text" class="form-control" @bind="itemName" 
+                               placeholder="Например: Кирпич керамический" />
+                    </div>
+
+                    <!-- Единица измерения -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Единица измерения</label>
+                        <input type="text" class="form-control" @bind="itemUnit" 
+                               placeholder="шт, м, м², кг" />
+                    </div>
+
+                    <!-- Цена и наценка -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Цена (себестоимость), ₽</label>
+                            <input type="number" class="form-control" @bind="itemPrice" 
+                                   step="0.01" min="0" @bind:event="onchange" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Наценка, %</label>
+                            <input type="number" class="form-control" @bind="itemMarkup" 
+                                   step="0.1" min="0" @bind:event="onchange" />
+                        </div>
+                    </div>
+
+                    <!-- Цена для заказчика (только для чтения) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Цена для заказчика, ₽</label>
+                        <input type="number" class="form-control bg-light" @bind="itemCustomerPrice" 
+                               step="0.01" min="0" readonly />
+                    </div>
+
+                    <!-- Округление -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Округление</label>
+                        <select class="form-select" @bind="itemRounding">
+                            <option value="0">Нет</option>
+                            <option value="1">Вверх</option>
+                            <option value="2">Вниз</option>
+                            <option value="3">Не менять</option>
+                        </select>
+                        <div class="form-text text-muted small">
+                            Правила округления будут применяться при расчетах
+                        </div>
+                    </div>
+
+                    <!-- Примечание -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Примечание</label>
+                        <textarea class="form-control" @bind="itemDescription" rows="3" 
+                                  placeholder="Дополнительная информация"></textarea>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <!-- Кнопки -->
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button class="btn btn-secondary" @onclick="Cancel">Отмена</button>
+                        <button class="btn btn-primary" @onclick="SaveItem" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            @(isNewItem ? "Добавить позицию" : "Сохранить")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    [Parameter] public int? ReferenceId { get; set; }
+
+    private bool isNewItem => !Id.HasValue || Id == 0;
+    private bool isSaving = false;
+    private string errorMessage = "";
+
+    private string itemName = "";
+    private string itemUnit = "шт";
+    private decimal itemPrice = 0;
+    private decimal itemMarkup = 0;
+    private decimal itemCustomerPrice = 0;
+    private RoundingType itemRounding = RoundingType.None;
+    private string itemDescription = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!isNewItem)
+        {
+            await LoadItem();
+        }
+    }
+
+    private async Task LoadItem()
+    {
+        try
+        {
+            var item = await Http.GetFromJsonAsync<ReferenceItem>($"http://localhost:5050/api/ReferenceItems/{Id}");
+            if (item != null)
+            {
+                itemName = item.Name;
+                itemUnit = item.Unit ?? "шт";
+                itemPrice = item.Price;
+                itemMarkup = item.Markup;
+                itemCustomerPrice = item.CustomerPrice;
+                itemRounding = item.Rounding;
+                itemDescription = item.Description ?? "";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Ошибка загрузки позиции";
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task SaveItem()
+    {
+        if (string.IsNullOrWhiteSpace(itemName))
+        {
+            errorMessage = "Наименование обязательно";
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            // Пересчитываем цену для заказчика
+            itemCustomerPrice = itemPrice * (1 + itemMarkup / 100);
+
+            var item = new ReferenceItem
+            {
+                Id = Id ?? 0,
+                Name = itemName,
+                Unit = itemUnit,
+                Price = itemPrice,
+                Markup = itemMarkup,
+                CustomerPrice = itemCustomerPrice,
+                Rounding = itemRounding,
+                Description = string.IsNullOrWhiteSpace(itemDescription) ? null : itemDescription,
+                ReferenceId = ReferenceId ?? (isNewItem ? null : Id),
+                Quantity = 1,
+                CreatedAt = DateTime.Now
+            };
+
+            HttpResponseMessage response;
+            if (isNewItem)
+            {
+                response = await Http.PostAsJsonAsync("http://localhost:5050/api/ReferenceItems", item);
+            }
+            else
+            {
+                response = await Http.PutAsJsonAsync($"http://localhost:5050/api/ReferenceItems/{Id}", item);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", isNewItem ? "✅ Позиция успешно добавлена!" : "✅ Позиция успешно обновлена!");
+                
+                // Возвращаемся к справочнику
+                if (ReferenceId.HasValue)
+                {
+                    Navigation.NavigateTo($"/reference/{ReferenceId}");
+                }
+                else
+                {
+                    Navigation.NavigateTo("/references");
+                }
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Ошибка сохранения: {response.StatusCode}";
+                Console.WriteLine(error);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка: {ex.Message}";
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (ReferenceId.HasValue)
+        {
+            Navigation.NavigateTo($"/reference/{ReferenceId}");
+        }
+        else
+        {
+            Navigation.NavigateTo("/references");
+        }
+    }
+}

@@ -1,0 +1,280 @@
+﻿@page "/objects"
+@using Feniks.Shared.Models
+@using SharedEstimate = Feniks.Shared.Models.Estimate
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Объекты строительства</h2>
+        <button class="btn btn-primary" @onclick="CreateNewObject">
+            <i class="bi bi-plus-circle me-1"></i>Новый объект
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3">Загрузка объектов...</p>
+        </div>
+    }
+    else if (objects == null || !objects.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-building fs-1 d-block mb-3"></i>
+            <p>Нет объектов строительства</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var obj in objects)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <!-- Заголовок и основная информация -->
+                            <h5 class="card-title mb-1">@obj.Name</h5>
+                            <p class="card-text text-muted small mb-2">@obj.Customer</p>
+                            <p class="card-text text-muted small mb-2">@obj.Address</p>
+                            
+                            <!-- Компактные финансовые показатели в строгом стиле (без иконок) -->
+                            <div class="row g-1 mt-2">
+                                <!-- Первая строка: Сметы, Себестоимость, Прибыль -->
+                                <div class="col-4">
+                                    <div class="text-center">
+                                        <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">Смет</div>
+                                        <div class="fw-bold" style="font-size: 0.9rem;">@GetEstimateCount(obj.Id)</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-center">
+                                        <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">Себ-ть</div>
+                                        <div class="fw-bold" style="font-size: 0.9rem;">@FormatNumber(GetObjectCost(obj.Id))</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-center">
+                                        <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">Прибыль</div>
+                                        <div class="fw-bold" style="font-size: 0.9rem; color: #b45f06;">@FormatNumber(GetObjectProfit(obj.Id))</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Вторая строка: Заказчик, Оплачено, Долг -->
+                                <div class="col-4 mt-2">
+                                    <div class="text-center">
+                                        <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">Заказчик</div>
+                                        <div class="fw-bold text-success" style="font-size: 0.9rem;">@FormatNumber(GetObjectCustomerPrice(obj.Id))</div>
+                                    </div>
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <div class="text-center">
+                                        <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">Оплачено</div>
+                                        <div class="fw-bold text-info" style="font-size: 0.9rem;">@FormatNumber(GetObjectPaid(obj.Id))</div>
+                                    </div>
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <div class="text-center">
+                                        <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">Долг</div>
+                                        <div class="fw-bold text-danger" style="font-size: 0.9rem;">@FormatNumber(GetObjectDebt(obj.Id))</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Третья строка: Средний процент прибыли (на всю ширину) -->
+                                <div class="col-12 mt-2">
+                                    <div class="text-center pt-1" style="border-top: 1px solid rgba(0,0,0,0.05);">
+                                        <span class="text-muted" style="font-size: 0.7rem;">Средний процент прибыли:</span>
+                                        <span class="fw-bold ms-1" style="font-size: 0.9rem; color: #b45f06;">@GetObjectAverageProfitPercent(obj.Id)%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Кнопки действий -->
+                            <div class="mt-2 d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewObject(obj.Id)">
+                                    <i class="bi bi-eye"></i> Открыть
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => EditObject(obj.Id)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    /* Дополнительные стили для более аккуратного отображения */
+    .card .text-center {
+        line-height: 1.2;
+    }
+    
+    .card .fw-bold {
+        margin-top: 2px;
+    }
+    
+    /* Тонкая линия-разделитель */
+    .border-top {
+        border-color: rgba(0,0,0,0.05) !important;
+    }
+</style>
+
+@code {
+    private bool isLoading = true;
+    private List<ConstructionObject>? objects;
+    private List<SharedEstimate>? allEstimates;
+    private Dictionary<int, decimal> objectCosts = new();
+    private Dictionary<int, decimal> objectCustomerPrices = new();
+    private Dictionary<int, decimal> objectProfits = new();
+    private Dictionary<int, int> objectEstimateCounts = new();
+    private Dictionary<int, decimal> objectPaid = new();
+    private Dictionary<int, decimal> objectDebt = new();
+    private Dictionary<int, decimal> objectAverageProfitPercent = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadObjects();
+    }
+
+    private async Task LoadObjects()
+    {
+        try
+        {
+            isLoading = true;
+            
+            // Загружаем все объекты
+            objects = await Http.GetFromJsonAsync<List<ConstructionObject>>("http://localhost:5050/api/ConstructionObjects");
+            
+            // Загружаем все сметы
+            allEstimates = await Http.GetFromJsonAsync<List<SharedEstimate>>("http://localhost:5050/api/Estimates");
+            
+            if (objects != null && allEstimates != null)
+            {
+                // Для каждого объекта вычисляем показатели
+                foreach (var obj in objects)
+                {
+                    var objEstimates = allEstimates.Where(e => e.ConstructionObjectId == obj.Id).ToList();
+                    
+                    decimal totalCost = objEstimates.Sum(e => e.TotalCost);
+                    decimal totalCustomerPrice = objEstimates.Sum(e => e.CustomerPrice);
+                    
+                    objectCosts[obj.Id] = totalCost;
+                    objectCustomerPrices[obj.Id] = totalCustomerPrice;
+                    objectProfits[obj.Id] = totalCustomerPrice - totalCost;
+                    objectEstimateCounts[obj.Id] = objEstimates.Count();
+                    
+                    // Вычисляем средний процент прибыли
+                    if (objEstimates.Any())
+                    {
+                        // Взвешенный средний процент на основе себестоимости
+                        decimal weightedProfitPercent = 0;
+                        decimal totalWeight = 0;
+                        
+                        foreach (var estimate in objEstimates)
+                        {
+                            if (estimate.TotalCost > 0)
+                            {
+                                decimal profitPercent = ((estimate.CustomerPrice - estimate.TotalCost) / estimate.TotalCost) * 100;
+                                weightedProfitPercent += profitPercent * estimate.TotalCost;
+                                totalWeight += estimate.TotalCost;
+                            }
+                        }
+                        
+                        if (totalWeight > 0)
+                        {
+                            objectAverageProfitPercent[obj.Id] = Math.Round(weightedProfitPercent / totalWeight, 1);
+                        }
+                        else
+                        {
+                            objectAverageProfitPercent[obj.Id] = 0;
+                        }
+                    }
+                    else
+                    {
+                        objectAverageProfitPercent[obj.Id] = 0;
+                    }
+                    
+                    // Заглушки для оплаты (позже будут из таблицы Payment)
+                    objectPaid[obj.Id] = totalCustomerPrice * 0.3m;
+                    objectDebt[obj.Id] = totalCustomerPrice - objectPaid[obj.Id];
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private int GetEstimateCount(int objectId)
+    {
+        return objectEstimateCounts.ContainsKey(objectId) ? objectEstimateCounts[objectId] : 0;
+    }
+
+    private decimal GetObjectCost(int objectId)
+    {
+        return objectCosts.ContainsKey(objectId) ? objectCosts[objectId] : 0;
+    }
+
+    private decimal GetObjectCustomerPrice(int objectId)
+    {
+        return objectCustomerPrices.ContainsKey(objectId) ? objectCustomerPrices[objectId] : 0;
+    }
+
+    private decimal GetObjectProfit(int objectId)
+    {
+        return objectProfits.ContainsKey(objectId) ? objectProfits[objectId] : 0;
+    }
+
+    private decimal GetObjectPaid(int objectId)
+    {
+        return objectPaid.ContainsKey(objectId) ? objectPaid[objectId] : 0;
+    }
+
+    private decimal GetObjectDebt(int objectId)
+    {
+        return objectDebt.ContainsKey(objectId) ? objectDebt[objectId] : 0;
+    }
+
+    private decimal GetObjectAverageProfitPercent(int objectId)
+    {
+        return objectAverageProfitPercent.ContainsKey(objectId) ? objectAverageProfitPercent[objectId] : 0;
+    }
+
+    private string FormatNumber(decimal value)
+    {
+        if (value >= 1_000_000_000)
+            return $"{(value / 1_000_000_000):F1} млрд";
+        if (value >= 1_000_000)
+            return $"{(value / 1_000_000):F1} млн";
+        if (value >= 1_000)
+            return $"{(value / 1_000):F1} тыс";
+        if (value == 0)
+            return "0";
+        return value.ToString("N0");
+    }
+
+    private void CreateNewObject()
+    {
+        Navigation.NavigateTo("/object/new");
+    }
+
+    private void ViewObject(int id)
+    {
+        Navigation.NavigateTo($"/object/{id}");
+    }
+
+    private void EditObject(int id)
+    {
+        Navigation.NavigateTo($"/object/{id}/edit");
+    }
+}

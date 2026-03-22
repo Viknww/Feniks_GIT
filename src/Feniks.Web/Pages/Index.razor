@@ -1,0 +1,44 @@
+﻿@page "/"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<h1>Feniks</h1>
+
+<div class="alert alert-info">
+    Проверка подключения к API...
+</div>
+
+@if (apiStatus == null)
+{
+    <p>Загрузка...</p>
+}
+else
+{
+    <div class="alert alert-success">
+         API отвечает: @apiStatus
+    </div>
+}
+
+<button class="btn btn-primary" @onclick="TestApi">Проверить API</button>
+
+@code {
+    private string? apiStatus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await TestApi();
+    }
+
+    private async Task TestApi()
+    {
+        try
+        {
+            var response = await Http.GetStringAsync("http://localhost:5050");
+            apiStatus = response;
+        }
+        catch (Exception ex)
+        {
+            apiStatus = $"Ошибка: {ex.Message}";
+        }
+    }
+}

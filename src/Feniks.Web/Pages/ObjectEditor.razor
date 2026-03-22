@@ -1,0 +1,240 @@
+﻿@page "/object/{id:int}/edit"
+@page "/object/new"
+@using Feniks.Shared.Models
+@using Feniks.Web.Services
+@using SharedEstimate = Feniks.Shared.Models.Estimate
+@implements IDisposable
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject DataSyncService DataSyncService
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">@(isNewObject ? "➕ Новый объект строительства" : "✏️ Редактирование объекта")</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Название объекта *</label>
+                        <input type="text" class="form-control" @bind="objectName" placeholder="Например: Коттедж в Завидово" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Заказчик *</label>
+                        <input type="text" class="form-control" @bind="objectCustomer" placeholder="ФИО или название организации" />
+                        <small class="text-muted">Обязательное поле</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Статус</label>
+                        <select class="form-select" @bind="objectStatus">
+                            <option value="Активен">Активен</option>
+                            <option value="Приостановлен">Приостановлен</option>
+                            <option value="Завершен">Завершен</option>
+                            <option value="Архивный">Архивный</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Адрес</label>
+                        <input type="text" class="form-control" @bind="objectAddress" placeholder="Адрес строительства" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Описание</label>
+                        <textarea class="form-control" @bind="objectDescription" rows="3"
+                                  placeholder="Дополнительная информация об объекте"></textarea>
+                    </div>
+
+                    @if (!isNewObject)
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Бюджет объекта рассчитывается автоматически как сумма себестоимостей всех смет.
+                            @if (objectBudget > 0)
+                            {
+                                <br/>
+                                <strong>Текущий бюджет: @objectBudget.ToString("N0") ₽</strong>
+                            }
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button class="btn btn-secondary" @onclick="Cancel">Отмена</button>
+                        <button class="btn btn-primary" @onclick="SaveObject" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            @(isNewObject ? "Создать объект" : "Сохранить")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private bool isNewObject => !Id.HasValue || Id == 0;
+    private bool isSaving = false;
+    private string errorMessage = "";
+
+    private string objectName = "";
+    private string objectCustomer = "";
+    private string objectAddress = "";
+    private string objectDescription = "";
+    private string objectStatus = "Активен";
+    private decimal objectBudget = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!isNewObject)
+        {
+            await LoadObject();
+        }
+    }
+
+    private async Task LoadObject()
+    {
+        try
+        {
+            var existingObject = await Http.GetFromJsonAsync<ConstructionObject>($"http://localhost:5050/api/ConstructionObjects/{Id}");
+            if (existingObject != null)
+            {
+                objectName = existingObject.Name;
+                objectCustomer = existingObject.Customer;
+                objectAddress = existingObject.Address ?? "";
+                objectDescription = existingObject.Description ?? "";
+                objectStatus = existingObject.Status ?? "Активен";
+                
+                // Загружаем сметы для расчета бюджета
+                var allEstimates = await Http.GetFromJsonAsync<List<SharedEstimate>>("http://localhost:5050/api/Estimates");
+                if (allEstimates != null)
+                {
+                    var objEstimates = allEstimates.Where(e => e.ConstructionObjectId == existingObject.Id);
+                    objectBudget = objEstimates.Sum(e => e.TotalCost);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Ошибка загрузки объекта";
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task SaveObject()
+    {
+        // Валидация
+        if (string.IsNullOrWhiteSpace(objectName))
+        {
+            errorMessage = "Название объекта обязательно";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(objectCustomer))
+        {
+            errorMessage = "Заказчик обязателен";
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            var newObject = new
+            {
+                Id = Id ?? 0,
+                Name = objectName,
+                Customer = objectCustomer,
+                Address = objectAddress,
+                Description = objectDescription,
+                Status = objectStatus,
+                CreatedAt = DateTime.Now
+            };
+
+            // Для отладки
+            Console.WriteLine($"Отправка объекта: {System.Text.Json.JsonSerializer.Serialize(newObject)}");
+
+            HttpResponseMessage response;
+            if (isNewObject)
+            {
+                response = await Http.PostAsJsonAsync("http://localhost:5050/api/ConstructionObjects", newObject);
+            }
+            else
+            {
+                response = await Http.PutAsJsonAsync($"http://localhost:5050/api/ConstructionObjects/{Id}", newObject);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Получаем созданный объект из ответа (для нового объекта)
+                if (isNewObject)
+                {
+                    var createdObject = await response.Content.ReadFromJsonAsync<ConstructionObject>();
+                    if (createdObject != null)
+                    {
+                        Console.WriteLine($"✅ Создан объект с ID: {createdObject.Id}");
+                        // Уведомляем об изменении с ID созданного объекта
+                        await DataSyncService.NotifyObjectChanged(createdObject.Id);
+                    }
+                    else
+                    {
+                        // Если не удалось получить ID, уведомляем об общем изменении
+                        await DataSyncService.NotifyObjectChanged(0);
+                    }
+                }
+                else
+                {
+                    // Для обновления уведомляем с существующим ID
+                    await DataSyncService.NotifyObjectChanged(Id.Value);
+                }
+
+                await JS.InvokeVoidAsync("alert", isNewObject ? "✅ Объект успешно создан!" : "✅ Объект успешно обновлен!");
+                Navigation.NavigateTo("/objects");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Ошибка сохранения: {response.StatusCode}";
+                Console.WriteLine($"Ошибка от сервера: {error}");
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                {
+                    errorMessage = $"Внутренняя ошибка сервера. Детали: {error}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка: {ex.Message}";
+            Console.WriteLine($"Исключение: {ex}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/objects");
+    }
+
+    public void Dispose()
+    {
+        // Освобождаем ресурсы при необходимости
+    }
+}

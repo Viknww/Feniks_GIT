@@ -1,0 +1,109 @@
+@using Feniks.Shared.Models
+
+<div class="tree-item">
+    <!-- Заголовок категории -->
+    <div class="tree-item-header d-flex align-items-center gap-2 @(IsExpanded ? "expanded" : "")">
+        <span class="toggle-icon" @onclick="Toggle" style="cursor: pointer;">
+            <i class="bi @(IsExpanded ? "bi-chevron-down" : "bi-chevron-right")"></i>
+        </span>
+        
+        <span class="object-icon" @onclick="Toggle" style="cursor: pointer;">
+            <i class="bi bi-folder"></i>
+        </span>
+        
+        <span class="flex-grow-1 text-white" 
+              @onclick="() => OnSelectCatalog.InvokeAsync(0)" 
+              style="cursor: pointer;">
+            @Category.Name
+        </span>
+        
+        <span class="badge bg-info" style="font-size: 10px;">
+            @(Category.RefCatalogs?.Count ?? 0)
+        </span>
+    </div>
+
+    <!-- Дочерние категории и каталоги -->
+    @if (IsExpanded)
+    {
+        <div class="tree-children">
+            @foreach (var child in Category.Children.OrderBy(c => c.OrderIndex))
+            {
+                <ReferenceCategoryNode Category="child" 
+                                       ExpandedCategories="ExpandedCategories"
+                                       OnToggle="OnToggle"
+                                       OnSelectCatalog="OnSelectCatalog"
+                                       OnSelectItem="OnSelectItem"
+                                       SearchTerm="SearchTerm"
+                                       ActiveCatalogId="ActiveCatalogId"
+                                       ActiveItemId="ActiveItemId" />
+            }
+
+            @if (FilteredCatalogs.Any())
+            {
+                <div class="mt-2">
+                    @foreach (var catalog in FilteredCatalogs)
+                    {
+                        <div class="tree-child-item d-flex align-items-center gap-2 py-1 @(ActiveCatalogId == catalog.Id ? "active-estimate" : "")"
+                             @onclick="() => OnSelectCatalog.InvokeAsync(catalog.Id)"
+                             style="cursor: pointer;">
+                            <i class="bi bi-folder2-open child-icon"></i>
+                            <span class="text-white-50 small flex-grow-1">@catalog.Name</span>
+                            <span class="badge bg-info" style="font-size: 10px;">@(catalog.Items?.Count ?? 0)</span>
+                        </div>
+                        
+                        @if (catalog.Items != null && catalog.Items.Any())
+                        {
+                            <div class="mt-1 ms-3">
+                                @foreach (var item in catalog.Items.Where(i => string.IsNullOrEmpty(SearchTerm) || i.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    <div class="tree-child-item d-flex align-items-center gap-2 py-1 @(ActiveItemId == item.Id ? "active-item" : "")"
+                                         @onclick="() => OnSelectItem.InvokeAsync(item.Id)"
+                                         style="cursor: pointer; margin-left: 20px;">
+                                        <i class="bi bi-dot child-icon"></i>
+                                        <span class="text-white-50 small flex-grow-1">@item.Name</span>
+                                        <span class="badge bg-info" style="font-size: 10px;">@item.Price.ToString("N0") ₽</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ReferenceCategory Category { get; set; } = default!;
+    [Parameter] public HashSet<int> ExpandedCategories { get; set; } = new();
+    [Parameter] public EventCallback<int> OnToggle { get; set; }
+    [Parameter] public EventCallback<int> OnSelectCatalog { get; set; }
+    [Parameter] public EventCallback<int> OnSelectItem { get; set; }
+    [Parameter] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter] public int? ActiveCatalogId { get; set; }
+    [Parameter] public int? ActiveItemId { get; set; }
+
+    private bool IsExpanded => ExpandedCategories?.Contains(Category.Id) ?? false;
+
+    private List<RefCatalog> FilteredCatalogs
+    {
+        get
+        {
+            if (Category.RefCatalogs == null) return new List<RefCatalog>();
+            
+            var catalogs = Category.RefCatalogs.ToList();
+            
+            if (string.IsNullOrEmpty(SearchTerm))
+                return catalogs;
+            
+            return catalogs
+                .Where(c => c.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void Toggle()
+    {
+        OnToggle.InvokeAsync(Category.Id);
+    }
+}

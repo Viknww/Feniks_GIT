@@ -1,0 +1,192 @@
+@page "/reference-category/{id:int}"
+@using Feniks.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<!-- Устанавливаем заголовок страницы -->
+
+
+<div class="container py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3">Загрузка категории...</p>
+        </div>
+    }
+    else if (category == null)
+    {
+        <div class="alert alert-danger">Категория не найдена</div>
+    }
+    else
+    {
+        <!-- Заголовок категории -->
+        <div class="d-flex flex-wrap justify-content-between align-items-start mb-4">
+            <div class="mb-3 mb-md-0">
+                <h2 class="mb-2">@category.Name</h2>
+                <div class="d-flex flex-wrap gap-3 text-muted">
+                    @if (!string.IsNullOrEmpty(category.Description))
+                    {
+                        <span><i class="bi bi-info-circle me-2"></i>@category.Description</span>
+                    }
+                </div>
+            </div>
+            <button class="btn btn-outline-primary" @onclick="EditCategory">
+                <i class="bi bi-pencil me-2"></i>Редактировать
+            </button>
+        </div>
+
+        <!-- Статистика -->
+        <div class="row g-4 mb-4">
+            <div class="col-sm-6">
+                <div class="card shadow-sm h-100 border-primary">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Всего справочников</h6>
+                        <h3 class="mb-0">@(references?.Count ?? 0)</h3>
+                        <small class="text-muted">В данной категории</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="card shadow-sm h-100 border-success">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Всего позиций</h6>
+                        <h3 class="mb-0">@totalItems.ToString("N0")</h3>
+                        <small class="text-muted">Во всех справочниках</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список справочников -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Справочники в категории</h5>
+                <button class="btn btn-primary btn-sm" @onclick="AddNewReference">
+                    <i class="bi bi-plus-circle me-2"></i>Новый справочник
+                </button>
+            </div>
+            <div class="card-body">
+                @if (references == null || !references.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-folder2-open fs-1 d-block mb-3"></i>
+                        <p>В категории нет справочников</p>
+                        <button class="btn btn-outline-primary" @onclick="AddNewReference">
+                            <i class="bi bi-plus-circle me-2"></i>Создать первый справочник
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Название справочника</th>
+                                    <th>Статус</th>
+                                    <th>Количество позиций</th>
+                                    <th>Дата создания</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var reference in references)
+                                {
+                                    <tr style="cursor: pointer;" @onclick="() => GoToReference(reference.Id)">
+                                        <td class="fw-bold">@reference.Name</td>
+                                        <td><span class="badge @GetStatusBadge(reference.Status)">@reference.Status</span></td>
+                                        <td>@(referenceItemsCount?.GetValueOrDefault(reference.Id) ?? 0)</td>
+                                        <td>@reference.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool isLoading = true;
+    private ReferenceCategory? category;
+    private List<Reference>? references;
+    private Dictionary<int, int> referenceItemsCount = new();
+    private int totalItems = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            
+            category = await Http.GetFromJsonAsync<ReferenceCategory>($"http://localhost:5050/api/ReferenceCategories/{Id}");
+            
+            if (category != null)
+            {
+                var allReferences = await Http.GetFromJsonAsync<List<Reference>>("http://localhost:5050/api/RefCatalogs");
+                if (allReferences != null)
+                {
+                    references = allReferences.Where(r => r.CategoryId == Id).ToList();
+                }
+                
+                var allItems = await Http.GetFromJsonAsync<List<ReferenceItem>>("http://localhost:5050/api/ReferenceItems") ?? new();
+                
+                totalItems = 0;
+                referenceItemsCount.Clear();
+                
+                if (references != null)
+                {
+                    foreach (var reference in references)
+                    {
+                        var items = allItems.Where(i => i.ReferenceId == reference.Id).ToList();
+                        referenceItemsCount[reference.Id] = items.Count;
+                        totalItems += items.Count;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Черновик" => "bg-secondary",
+        "В работе" => "bg-primary",
+        "Согласование" => "bg-warning text-dark",
+        "Утверждена" => "bg-success",
+        "Завершена" => "bg-info",
+        _ => "bg-light text-dark"
+    };
+
+    private void EditCategory()
+    {
+        Navigation.NavigateTo($"/reference-category/{Id}/edit", true);
+    }
+
+    private void AddNewReference()
+    {
+        Navigation.NavigateTo($"/reference/new/{Id}", true);
+    }
+
+    private void GoToReference(int referenceId)
+    {
+        Navigation.NavigateTo($"/reference/{referenceId}");
+    }
+}

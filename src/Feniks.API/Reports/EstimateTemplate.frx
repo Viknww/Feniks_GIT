@@ -1,0 +1,219 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="03/14/2026 00:32:49" ReportInfo.Modified="03/20/2026 10:15:58" ReportInfo.CreatorVersion="2026.1.0.0">
+  <Dictionary>
+    <TableDataSource Name="Estimate" ReferenceName="Feniks.Estimate" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="TotalCost" DataType="System.Decimal"/>
+      <Column Name="CustomerPrice" DataType="System.Decimal"/>
+      <Column Name="CreatedAt" DataType="System.DateTime"/>
+      <Column Name="Status" DataType="System.String"/>
+      <Column Name="ManagerName" DataType="System.String"/>
+      <Column Name="Description" DataType="System.String"/>
+      <Column Name="ConstructionObjectId" DataType="System.Int32"/>
+      <Column Name="ContractorId" DataType="System.Int32"/>
+      <Column Name="ManagerEmail" DataType="System.String"/>
+      <Column Name="Profit" DataType="System.Decimal"/>
+    </TableDataSource>
+    <TableDataSource Name="Object" ReferenceName="Feniks.Object" DataType="System.Int32" Enabled="true">
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="Customer" DataType="System.String"/>
+      <Column Name="Address" DataType="System.String"/>
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Description" DataType="System.String"/>
+      <Column Name="Status" DataType="System.String"/>
+      <Column Name="CreatedAt" DataType="System.DateTime"/>
+      <Column Name="StartDate" DataType="System.DateTime"/>
+      <Column Name="EndDate" DataType="System.DateTime"/>
+      <Column Name="Budget" DataType="System.Decimal"/>
+    </TableDataSource>
+    <TableDataSource Name="Items" ReferenceName="Feniks.Items" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Unit" DataType="System.String"/>
+      <Column Name="Quantity" DataType="System.Decimal"/>
+      <Column Name="Price" DataType="System.Decimal"/>
+      <Column Name="CustomerPrice" DataType="System.Decimal"/>
+      <Column Name="Total" DataType="System.Decimal"/>
+      <Column Name="CustomerTotal" DataType="System.Decimal"/>
+      <Column Name="Type" DataType="System.String"/>
+      <Column Name="StageId" DataType="System.Int32"/>
+      <Column Name="GroupId" DataType="System.Int32"/>
+      <Column Name="OrderIndex" DataType="System.Int32"/>
+      <Column Name="RowType" DataType="System.String"/>
+      <Column Name="EstimateId" DataType="System.Int32"/>
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="Description" DataType="System.String"/>
+      <Column Name="Markup" DataType="System.Decimal"/>
+      <Column Name="MaterialId" DataType="System.Int32"/>
+      <Column Name="ContractorId" DataType="System.Int32"/>
+      <Column Name="StartDate" DataType="System.DateTime"/>
+      <Column Name="EndDate" DataType="System.DateTime"/>
+      <Column Name="Progress" DataType="System.Decimal"/>
+      <Column Name="CalculatedCustomerPrice" DataType="System.Decimal"/>
+      <Column Name="StageNumber" DataType="System.Int32"/>
+      <Column Name="GroupNumber" DataType="System.Int32"/>
+      <Column Name="ItemNumber" DataType="System.Int32"/>
+      <Column Name="StageDisplayName" DataType="System.String"/>
+      <Column Name="GroupDisplayName" DataType="System.String"/>
+      <Column Name="ItemDisplayName" DataType="System.String"/>
+      <Column Name="StageTotal" DataType="System.Decimal"/>
+      <Column Name="GroupTotal" DataType="System.Decimal"/>
+    </TableDataSource>
+    <TableDataSource Name="Stages" ReferenceName="Feniks.Stages" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="OrderIndex" DataType="System.Int32"/>
+      <Column Name="EstimateId" DataType="System.Int32"/>
+      <Column Name="Description" DataType="System.String"/>
+      <Column Name="IsExpanded" DataType="System.Boolean" BindableControl="CheckBox"/>
+      <Column Name="ReportNumber" DataType="System.Int32"/>
+    </TableDataSource>
+    <TableDataSource Name="Groups" ReferenceName="Feniks.Groups" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="StageId" DataType="System.Int32"/>
+      <Column Name="OrderIndex" DataType="System.Int32"/>
+      <Column Name="Description" DataType="System.String"/>
+      <Column Name="IsExpanded" DataType="System.Boolean" BindableControl="CheckBox"/>
+      <Column Name="ReportNumber" DataType="System.Int32"/>
+    </TableDataSource>
+    <TableDataSource Name="Totals" ReferenceName="Feniks.Totals" DataType="System.Int32" Enabled="true">
+      <Column Name="WorkTotal" DataType="System.Decimal"/>
+      <Column Name="MaterialTotal" DataType="System.Decimal"/>
+      <Column Name="MachineryTotal" DataType="System.Decimal"/>
+      <Column Name="DeliveryTotal" DataType="System.Decimal"/>
+      <Column Name="WorkTotalCustomer" DataType="System.Decimal"/>
+      <Column Name="MaterialTotalCustomer" DataType="System.Decimal"/>
+      <Column Name="MachineryTotalCustomer" DataType="System.Decimal"/>
+      <Column Name="DeliveryTotalCustomer" DataType="System.Decimal"/>
+    </TableDataSource>
+    <TableDataSource Name="Company" ReferenceName="Feniks.Company" DataType="System.Int32" Enabled="true">
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="Phone" DataType="System.String"/>
+      <Column Name="Email" DataType="System.String"/>
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Description" DataType="System.String"/>
+      <Column Name="Currency" DataType="System.String"/>
+      <Column Name="Address" DataType="System.String"/>
+    </TableDataSource>
+    <TableDataSource Name="Contractors" ReferenceName="Feniks.Contractors" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="Type" DataType="System.String"/>
+      <Column Name="Phone" DataType="System.String"/>
+      <Column Name="Email" DataType="System.String"/>
+      <Column Name="Inn" DataType="System.String"/>
+      <Column Name="Address" DataType="System.String"/>
+      <Column Name="CreatedAt" DataType="System.DateTime"/>
+    </TableDataSource>
+    <TableDataSource Name="Documents" ReferenceName="Feniks.Documents" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="Type" DataType="System.String"/>
+      <Column Name="For" DataType="System.String"/>
+      <Column Name="EstimateId" DataType="System.Int32"/>
+      <Column Name="ContractorId" DataType="System.Int32"/>
+      <Column Name="CreatedAt" DataType="System.DateTime"/>
+      <Column Name="FilePath" DataType="System.String"/>
+    </TableDataSource>
+    <TableDataSource Name="Payments" ReferenceName="Feniks.Payments" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="EstimateId" DataType="System.Int32"/>
+      <Column Name="Date" DataType="System.DateTime"/>
+      <Column Name="Amount" DataType="System.Decimal"/>
+      <Column Name="Type" DataType="System.String"/>
+      <Column Name="Comment" DataType="System.String"/>
+      <Column Name="IsPaid" DataType="System.Boolean" BindableControl="CheckBox"/>
+    </TableDataSource>
+    <TableDataSource Name="Purchases" ReferenceName="Feniks.Purchases" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="EstimateId" DataType="System.Int32"/>
+      <Column Name="MaterialId" DataType="System.Int32"/>
+      <Column Name="Quantity" DataType="System.Decimal"/>
+      <Column Name="Price" DataType="System.Decimal"/>
+      <Column Name="Total" DataType="System.Decimal"/>
+      <Column Name="ContractorId" DataType="System.Int32"/>
+      <Column Name="PurchaseDate" DataType="System.DateTime"/>
+      <Column Name="IsDelivered" DataType="System.Boolean" BindableControl="CheckBox"/>
+    </TableDataSource>
+    <TableDataSource Name="Materials" ReferenceName="Feniks.Materials" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="Unit" DataType="System.String"/>
+      <Column Name="Price" DataType="System.Decimal"/>
+      <Column Name="ContractorId" DataType="System.Int32"/>
+    </TableDataSource>
+    <TableDataSource Name="Works" ReferenceName="Feniks.Works" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="EstimateItemId" DataType="System.Int32"/>
+      <Column Name="ContractorId" DataType="System.Int32"/>
+      <Column Name="StartDate" DataType="System.DateTime"/>
+      <Column Name="EndDate" DataType="System.DateTime"/>
+      <Column Name="Progress" DataType="System.Decimal"/>
+      <Column Name="Notes" DataType="System.String"/>
+    </TableDataSource>
+    <Relation Name="Stages_Groups" ParentDataSource="Stages" ChildDataSource="Groups" ParentColumns="Id" ChildColumns="StageId" Enabled="true"/>
+    <Relation Name="Groups_Items" ParentDataSource="Groups" ChildDataSource="Items" ParentColumns="Id" ChildColumns="GroupId" Enabled="true"/>
+    <Total Name="Total_Stages" Expression="[Items.CustomerTotal]" Evaluator="DataItems"/>
+  </Dictionary>
+  <ReportPage Name="Page1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="120.96">
+      <TextObject Name="Text10" Width="85.05" Height="9.45" Text="ПРИЛОЖЕНИЕ №" Font="DejaVu Sans Condensed, 5.8pt"/>
+      <TextObject Name="Text11" Left="85.05" Width="85.05" Height="9.45" Text="К ДОГОВОРУ №" Font="DejaVu Sans Condensed, 5.8pt"/>
+      <TextObject Name="Text12" Left="557.55" Width="18.9" Height="9.45" Text="ОТ" Font="DejaVu Sans Condensed, 5.8pt"/>
+      <TextObject Name="Text13" Left="113.4" Top="28.35" Width="94.5" Height="18.9" Text="[Estimate.CreatedAt]" Format="Date" Format.Format="d" Font="DejaVu Sans Condensed, 6.75pt"/>
+      <PictureObject Name="Picture3" Top="18.9" Width="113.4" Height="56.7" ImageLocation="F:\SmetaProjects\Feniks\src\Feniks.API\Reports\Logo_Nadezda.png" TransparentColor="White" ImageFormat="Png"/>
+      <LineObject Name="Line1" Top="10.58" Width="708.75"/>
+      <TextObject Name="Text14" Top="92.61" Width="425.25" Height="18.9" Fill.Color="MistyRose" Text="[Estimate.Name]" VertAlign="Center" Font="DejaVu Sans Condensed, 9.75pt, style=Bold, Italic"/>
+      <TextObject Name="Text15" Top="75.6" Width="425.25" Height="18.9" Text="Объект:  [Object.Name]" Font="DejaVu Sans Condensed, 9pt"/>
+      <TextObject Name="Text16" Left="434.7" Top="18.9" Width="160.65" Height="28.35" Text="Работа:" Padding="1, 0, 1, 10" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text17" Left="434.7" Top="33.64" Width="160.65" Height="32.51" Text="Материалы:" Padding="1, 0, 1, 10" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text18" Left="434.7" Top="48.38" Width="160.65" Height="28.35" Text="Механизмы:" Padding="1, 0, 1, 10" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text19" Left="434.7" Top="63.13" Width="160.65" Height="32.51" Text="Доставка:" Padding="1, 0, 1, 10" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text20" Left="434.7" Top="77.87" Width="160.65" Height="37.8" Text="Наценки, налоги, скидки:" Padding="1, 0, 1, 10" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text21" Left="434.7" Top="92.61" Width="160.65" Height="28.35" Text="Итого по смете:" Padding="1, 0, 1, 10" VertAlign="Center" Font="DejaVu Sans Condensed, 8.25pt, style=Bold, Italic"/>
+      <TextObject Name="Text22" Left="548.1" Top="18.9" Width="160.65" Height="28.35" Text="[Totals.WorkTotalCustomer]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text23" Left="548.1" Top="33.64" Width="160.65" Height="32.51" Text="[Totals.MaterialTotalCustomer]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text24" Left="548.1" Top="48.38" Width="160.65" Height="28.35" Text="[Totals.MachineryTotalCustomer]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text25" Left="548.1" Top="63.13" Width="160.65" Height="32.51" Text="[Totals.DeliveryTotalCustomer]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text26" Left="548.1" Top="77.87" Width="160.65" Height="37.8" Text="0" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" Font="DejaVu Sans Condensed, 8.25pt"/>
+      <TextObject Name="Text27" Left="548.1" Top="92.61" Width="160.65" Height="18.9" Fill.Color="MistyRose" Text="[Estimate.CustomerPrice]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 8.25pt, style=Bold, Italic"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="123.63" Width="718.2" Height="18.9" Fill.Color="Gainsboro">
+      <TextObject Name="Text1" Left="18.9" Width="292.95" Height="18.9" Text="Наименование" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt, style=Bold"/>
+      <TextObject Name="Text2" Left="387.45" Width="66.15" Height="18.9" Text="Ед. изм." HorzAlign="Center" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt, style=Bold"/>
+      <TextObject Name="Text3" Left="453.6" Width="75.6" Height="18.9" Text="Кол-во" HorzAlign="Center" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt, style=Bold"/>
+      <TextObject Name="Text4" Left="529.2" Width="75.6" Height="18.9" Text="Цена" HorzAlign="Center" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt, style=Bold" FirstTabOffset="18.9" ParagraphOffset="18.9"/>
+      <TextObject Name="Text5" Left="604.8" Width="94.5" Height="18.9" Text="Стоимость" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt, style=Bold"/>
+    </PageHeaderBand>
+    <DataBand Name="DataStages" Top="145.19" Width="718.2" Height="18.9" DataSource="Stages">
+      <TextObject Name="TextStageName" Left="28.35" Width="359.1" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightCyan" Text="[Stages.ReportNumber]. [Stages.Name]" VertAlign="Center" Font="DejaVu Sans Condensed, 8.25pt, style=Bold"/>
+      <TextObject Name="TextStageQuantity" Left="444.15" Width="75.6" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightCyan" Format="Number" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+      <TextObject Name="TextStagePrice" Left="510.3" Width="94.5" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightCyan" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+      <TextObject Name="TextStageTotal" Left="604.8" Width="94.5" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightCyan" Text="[Total_Stages]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 8.25pt, style=Bold"/>
+      <TextObject Name="TextStageUnit" Left="387.45" Width="66.15" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightCyan" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+      <DataBand Name="DataGroups" Top="166.76" Width="718.2" Height="18.9" DataSource="Groups">
+        <TextObject Name="TextGroupName" Left="37.8" Width="349.65" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightYellow" Text="   [Stages.ReportNumber].[Groups.ReportNumber]. [Groups.Name]" VertAlign="Center" Font="DejaVu Sans Condensed, 8.25pt, style=Bold"/>
+        <TextObject Name="TextGroupUnit" Left="387.45" Width="66.15" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightYellow" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+        <TextObject Name="TextGroupQuantity" Left="453.6" Width="56.7" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightYellow" Format="Number" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+        <TextObject Name="TextGroupPrice" Left="510.3" Width="94.5" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightYellow" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+        <TextObject Name="TextGroupTotal" Left="604.8" Width="94.5" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Fill.Color="LightYellow" Text="[Items.GroupTotal]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 8.25pt, style=Bold"/>
+        <DataBand Name="DataItems" Top="188.33" Width="718.2" Height="18.9" DataSource="Items">
+          <TextObject Name="TextItemName" Left="47.25" Width="340.2" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Text="[Items.ItemDisplayName]" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+          <TextObject Name="TextItemUnit" Left="387.45" Width="66.15" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Text="[Items.Unit]" HorzAlign="Center" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+          <TextObject Name="TextItemQuantity" Left="453.6" Width="56.7" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Text="[Items.Quantity]" Format="Number" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+          <TextObject Name="TextItemPrice" Left="510.3" Width="94.5" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Text="[Items.CustomerPrice]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+          <TextObject Name="TextItemTotal" Left="604.8" Width="94.5" Height="18.9" Border.Lines="Top, Bottom" Border.Color="LightGray" Text="[Items.CustomerTotal]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 7.5pt"/>
+        </DataBand>
+      </DataBand>
+    </DataBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="209.89" Width="718.2" Height="47.25" Border.Lines="Top">
+      <TextObject Name="TextTotalSummary" Left="604.8" Top="9.45" Width="94.5" Height="18.9" Fill.Color="MistyRose" Text="[Estimate.CustomerPrice]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 8pt, style=Bold"/>
+      <TextObject Name="TextTotalLabel" Left="463.05" Top="9.45" Width="132.3" Height="18.9" Fill.Color="MistyRose" Text="ВСЕГО ПО СМЕТЕ:" HorzAlign="Right" VertAlign="Center" Font="DejaVu Sans Condensed, 8.25pt, style=Bold"/>
+    </ReportSummaryBand>
+    <PageFooterBand Name="PageFooter1" Top="259.81" Width="718.2" Height="18.9">
+      <TextObject Name="TextDate" Left="18.9" Width="283.5" Height="18.9" Text="Дата печати: [Date]" Format="Date" Format.Format="dd.MM.yyyy HH:mm" VertAlign="Bottom" Font="DejaVu Sans Condensed, 7.5pt"/>
+      <TextObject Name="TextPageNumber" Left="604.8" Width="94.5" Height="18.9" Text="Страница [Page]" HorzAlign="Right" VertAlign="Bottom" Font="DejaVu Sans Condensed, 7.5pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

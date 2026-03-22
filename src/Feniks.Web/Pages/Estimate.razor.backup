@@ -1,0 +1,1105 @@
+﻿@page "/estimate/{id:int}"
+@using Feniks.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="estimate-page">
+    <!-- Хлебные крошки -->
+    <div class="breadcrumbs mb-3">
+        <a href="/">Главная</a> <span class="mx-2"></span>
+        <a href="/objects">Объекты</a> <span class="mx-2"></span>
+        <span>@estimate?.name</span>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3">Загрузка сметы...</p>
+        </div>
+    }
+    else if (estimate == null)
+    {
+        <div class="alert alert-danger">
+            Смета не найдена
+        </div>
+    }
+    else
+    {
+        <!-- Индикатор сохранения -->
+        @if (isSaving)
+        {
+            <div class="position-fixed top-0 end-0 m-3 p-2 bg-success text-white rounded">
+                <i class="bi bi-check-circle me-1"></i>Сохранено
+            </div>
+        }
+
+        <!-- Заголовок сметы -->
+        <div class="estimate-header bg-white rounded-3 shadow-sm p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div>
+                    <h1 class="h3 mb-2">@estimate.name</h1>
+                    <div class="d-flex gap-4 text-muted flex-wrap">
+                        <span><i class="bi bi-building me-1"></i> Объект: @objectName</span>
+                        <span><i class="bi bi-person me-1"></i> Менеджеры: Виктор, smetternww@yandex.ru</span>
+                    </div>
+                    <div class="d-flex gap-3 mt-2">
+                        <span class="badge @GetStatusBadge(estimate.status)">@estimate.status</span>
+                        <span class="text-muted"><i class="bi bi-pencil me-1"></i>Режим правки</span>
+                        <span class="text-muted"><i class="bi bi-lock me-1"></i>Фиксация цены заказчика</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary">Экспорт</button>
+                    <button class="btn btn-sm btn-outline-secondary">Обновить цены</button>
+                    <button class="btn btn-sm btn-outline-secondary">Создать копию</button>
+                    <button class="btn btn-sm btn-outline-secondary">Архивировать</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блоки стоимости -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Работы</span>
+                            <span class="fw-bold">@workCost.ToString("N0") ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Материалы</span>
+                            <span class="fw-bold">@materialCost.ToString("N0") ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Механизмы</span>
+                            <span class="fw-bold">@machineryCost.ToString("N0") ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Доставка</span>
+                            <span class="fw-bold">@deliveryCost.ToString("N0") ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Стоимость, ₽</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Для заказчика</span>
+                            <span class="fw-bold text-success">@customerWorkCost.ToString("N0") ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span></span>
+                            <span class="fw-bold text-success">@customerMaterialCost.ToString("N0") ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span></span>
+                            <span class="fw-bold">0 ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span></span>
+                            <span class="fw-bold text-success">@customerDeliveryCost.ToString("N0") ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Прибыль, ₽</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span></span>
+                            <span class="fw-bold text-warning">@profitWork.ToString("N0") ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span></span>
+                            <span class="fw-bold text-warning">@profitMaterial.ToString("N0") ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span></span>
+                            <span class="fw-bold">0 ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span></span>
+                            <span class="fw-bold text-warning">@profitDelivery.ToString("N0") ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок наценок -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">Наценки, налоги, скидки</span>
+                            <span class="text-muted">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm bg-primary bg-opacity-10">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="small text-muted">ВСЕГО</div>
+                                <div class="h4 mb-0">@totalCost.ToString("N0") ₽</div>
+                                <div class="small text-success">@customerTotal.ToString("N0") ₽</div>
+                                <div class="small text-warning">@profitTotal.ToString("N0") ₽</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="display-6 text-primary">@profitPercentage.ToString("0.0")%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель инструментов -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-3 align-items-center">
+                    <button class="btn btn-primary btn-sm" @onclick="() => ShowAddItemDialog(null)">
+                        <i class="bi bi-plus-circle me-1"></i>+ позиция
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-download me-1"></i>Импорт данных
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-percent me-1"></i>% Наценки и скидки
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-book me-1"></i>Справочники
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-database me-1"></i>База расценок
+                    </button>
+                    <span class="ms-auto text-muted">Доп. работы: + добавить</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Этапы сметы -->
+        <div class="stages-container">
+            @if (!stages.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-layers fs-1 d-block mb-3"></i>
+                    <p>Нет этапов в смете</p>
+                    <button class="btn btn-outline-primary" @onclick="AddStage">
+                        Добавить первый этап
+                    </button>
+                </div>
+            }
+            else
+            {
+                @foreach (var stage in stages.OrderBy(s => s.orderIndex))
+                {
+                    <div class="stage-card card shadow-sm mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                                <button class="btn btn-sm btn-link p-0" @onclick="() => ToggleStage(stage.id)">
+                                    <i class="bi @(stage.isExpanded ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                                </button>
+                                @if (editingStageId == stage.id)
+                                {
+                                    <input type="text" class="form-control form-control-sm" @bind="editingStageName" style="width: 400px;" @onkeydown="(e) => HandleEnter(e, stage)" />
+                                    <button class="btn btn-sm btn-success" @onclick="() => SaveStage(stage)"></button>
+                                    <button class="btn btn-sm btn-secondary" @onclick="CancelEditStage"></button>
+                                }
+                                else
+                                {
+                                    <h5 class="mb-0">@stage.name</h5>
+                                    <button class="btn btn-sm btn-link" @onclick="() => EditStage(stage)"></button>
+                                }
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => AddGroup(stage.id)">
+                                    <i class="bi bi-plus-circle me-1"></i>Группа
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteStage(stage.id)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (stage.isExpanded)
+                        {
+                            <div class="card-body">
+                                <!-- Группы внутри этапа -->
+                                @{
+                                    var stageGroups = groups.Where(g => g.stageId == stage.id).OrderBy(g => g.orderIndex).ToList();
+                                }
+                                @foreach (var group in stageGroups)
+                                {
+                                    <div class="group-card card bg-light mb-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                                                <button class="btn btn-sm btn-link p-0" @onclick="() => ToggleGroup(group.id)">
+                                                    <i class="bi @(group.isExpanded ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                                                </button>
+                                                @if (editingGroupId == group.id)
+                                                {
+                                                    <input type="text" class="form-control form-control-sm" @bind="editingGroupName" style="width: 350px;" @onkeydown="(e) => HandleEnter(e, group)" />
+                                                    <button class="btn btn-sm btn-success" @onclick="() => SaveGroup(group)"></button>
+                                                    <button class="btn btn-sm btn-secondary" @onclick="CancelEditGroup"></button>
+                                                }
+                                                else
+                                                {
+                                                    <h6 class="mb-0">@group.name</h6>
+                                                    <button class="btn btn-sm btn-link" @onclick="() => EditGroup(group)"></button>
+                                                }
+                                            </div>
+                                            <div>
+                                                @{
+                                                    var groupTotal = items.Where(i => i.groupId == group.id).Sum(i => i.total);
+                                                    var groupCustomerTotal = items.Where(i => i.groupId == group.id).Sum(i => i.customerTotal);
+                                                }
+                                                <span class="badge bg-light text-dark me-2">@groupTotal.ToString("N0") ₽</span>
+                                                <span class="badge bg-success text-white">@groupCustomerTotal.ToString("N0") ₽</span>
+                                            </div>
+                                        </div>
+
+                                        @if (group.isExpanded)
+                                        {
+                                            <div class="card-body">
+                                                <!-- Позиции в группе с автосохранением -->
+                                                @{
+                                                    var groupItems = items.Where(i => i.groupId == group.id).OrderBy(i => i.orderIndex).ToList();
+                                                }
+                                                @if (groupItems.Any())
+                                                {
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm table-hover align-middle">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th style="width: 30px;">
+                                                                        <input type="checkbox" @onchange="() => ToggleSelectAllInGroup(group.id)" checked="@IsAllSelectedInGroup(group.id)" />
+                                                                    </th>
+                                                                    <th style="width: 40px;">№</th>
+                                                                    <th style="width: 60px;">Тип</th>
+                                                                    <th>Позиция</th>
+                                                                    <th style="width: 80px;">Ед. изм.</th>
+                                                                    <th style="width: 100px;">Кол-во</th>
+                                                                    <th style="width: 120px;">Цена</th>
+                                                                    <th style="width: 120px;">Стоимость</th>
+                                                                    <th style="width: 100px;">Наценка, %</th>
+                                                                    <th style="width: 120px;">Цена для заказчика</th>
+                                                                    <th style="width: 120px;">Стоимость для заказчика</th>
+                                                                    <th style="width: 50px;"></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach (var item in groupItems)
+                                                                {
+                                                                    <tr class="@(selectedItems.Contains(item.id) ? "table-primary" : "")">
+                                                                        <td><input type="checkbox" @onchange="() => ToggleItemSelection(item.id)" checked="@selectedItems.Contains(item.id)" /></td>
+                                                                        <td>@item.orderIndex</td>
+                                                                        <td>
+                                                                            <select class="form-select form-select-sm" @bind="item.type" @bind:event="onchange">
+                                                                                <option value="P">P</option>
+                                                                                <option value="M">M</option>
+                                                                                <option value="D">D</option>
+                                                                                <option value="A">A</option>
+                                                                            </select>
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="text" class="form-control form-control-sm" @bind="item.name" @bind:event="oninput" />
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="text" class="form-control form-control-sm" @bind="item.unit" @bind:event="oninput" />
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="number" class="form-control form-control-sm" @bind="item.quantity" @bind:event="oninput" />
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="number" class="form-control form-control-sm" @bind="item.price" @bind:event="oninput" />
+                                                                        </td>
+                                                                        <td class="fw-bold">@item.total.ToString("N2") ₽</td>
+                                                                        <td>
+                                                                            <input type="number" class="form-control form-control-sm" @bind="item.markup" @bind:event="oninput" />
+                                                                        </td>
+                                                                        <td>@item.customerPrice.ToString("N2") ₽</td>
+                                                                        <td class="fw-bold text-success">@item.customerTotal.ToString("N2") ₽</td>
+                                                                        <td>
+                                                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item.id)">
+                                                                                <i class="bi bi-trash"></i>
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <p class="text-muted small mb-3">Нет позиций в группе</p>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                
+                                <!-- Позиции без группы с автосохранением -->
+                                @{
+                                    var groupIds = stageGroups.Select(g => g.id).ToList();
+                                    var ungroupedItems = items.Where(i => i.groupId == null || !groupIds.Contains(i.groupId.Value)).ToList();
+                                }
+                                @if (ungroupedItems.Any())
+                                {
+                                    <h6 class="mt-3 mb-2">Позиции без группы</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 30px;">
+                                                        <input type="checkbox" @onchange="() => ToggleSelectAllInStage(stage.id)" checked="@IsAllSelectedInStage(stage.id)" />
+                                                    </th>
+                                                    <th style="width: 40px;">№</th>
+                                                    <th style="width: 60px;">Тип</th>
+                                                    <th>Позиция</th>
+                                                    <th style="width: 80px;">Ед. изм.</th>
+                                                    <th style="width: 100px;">Кол-во</th>
+                                                    <th style="width: 120px;">Цена</th>
+                                                    <th style="width: 120px;">Стоимость</th>
+                                                    <th style="width: 100px;">Наценка, %</th>
+                                                    <th style="width: 120px;">Цена для заказчика</th>
+                                                    <th style="width: 120px;">Стоимость для заказчика</th>
+                                                    <th style="width: 50px;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in ungroupedItems.OrderBy(i => i.orderIndex))
+                                                {
+                                                    <tr class="@(selectedItems.Contains(item.id) ? "table-primary" : "")">
+                                                        <td><input type="checkbox" @onchange="() => ToggleItemSelection(item.id)" checked="@selectedItems.Contains(item.id)" /></td>
+                                                        <td>@item.orderIndex</td>
+                                                        <td>
+                                                            <select class="form-select form-select-sm" @bind="item.type" @bind:event="onchange">
+                                                                <option value="P">P</option>
+                                                                <option value="M">M</option>
+                                                                <option value="D">D</option>
+                                                                <option value="A">A</option>
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <input type="text" class="form-control form-control-sm" @bind="item.name" @bind:event="oninput" />
+                                                        </td>
+                                                        <td>
+                                                            <input type="text" class="form-control form-control-sm" @bind="item.unit" @bind:event="oninput" />
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" class="form-control form-control-sm" @bind="item.quantity" @bind:event="oninput" />
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" class="form-control form-control-sm" @bind="item.price" @bind:event="oninput" />
+                                                        </td>
+                                                        <td class="fw-bold">@item.total.ToString("N2") ₽</td>
+                                                        <td>
+                                                            <input type="number" class="form-control form-control-sm" @bind="item.markup" @bind:event="oninput" />
+                                                        </td>
+                                                        <td>@item.customerPrice.ToString("N2") ₽</td>
+                                                        <td class="fw-bold text-success">@item.customerTotal.ToString("N2") ₽</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item.id)">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Нижний колонтитул -->
+        @if (selectedItems.Any())
+        {
+            <div class="card shadow-sm mt-4 position-sticky-bottom">
+                <div class="card-body bg-light">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <span class="fw-bold me-3">Выбрано позиций: @selectedItems.Count</span>
+                            <span class="me-3"> Сумма: @selectedSum.ToString("N0") ₽</span>
+                            <span class="text-success"> Для заказчика: @selectedCustomerSum.ToString("N0") ₽</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="CopySelected">
+                                <i class="bi bi-files me-1"></i>Копировать
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="ShowMoveToGroup">
+                                <i class="bi bi-folder-plus me-1"></i>В группу
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="DeleteSelected">
+                                <i class="bi bi-trash me-1"></i>Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Диалог добавления позиции -->
+        @if (showAddDialog)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"> Добавить позицию</h5>
+                            <button type="button" class="btn-close" @onclick="CloseAddDialog"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label">Наименование *</label>
+                                    <input type="text" class="form-control" @bind="newItem.name" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Тип</label>
+                                    <select class="form-select" @bind="newItem.type">
+                                        <option value="P">Работа (P)</option>
+                                        <option value="M">Материал (M)</option>
+                                        <option value="D">Доставка (D)</option>
+                                        <option value="A">Механизмы (A)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Ед. изм.</label>
+                                    <input type="text" class="form-control" @bind="newItem.unit" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Количество</label>
+                                    <input type="number" class="form-control" @bind="newItem.quantity" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Цена</label>
+                                    <input type="number" class="form-control" @bind="newItem.price" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Наценка, %</label>
+                                    <input type="number" class="form-control" @bind="newItem.markup" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Этап</label>
+                                    <select class="form-select" @bind="newItem.stageId">
+                                        <option value="">Выберите этап</option>
+                                        @foreach (var stage in stages)
+                                        {
+                                            <option value="@stage.id">@stage.name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Группа (необязательно)</label>
+                                    <select class="form-select" @bind="newItem.groupId">
+                                        <option value="">Без группы</option>
+                                        @foreach (var group in groups.Where(g => g.stageId == newItem.stageId))
+                                        {
+                                            <option value="@group.id">@group.name</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" @onclick="CloseAddDialog">Отмена</button>
+                            <button class="btn btn-primary" @onclick="AddItem">Добавить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Модальное окно для перемещения -->
+        @if (showMoveModal)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Переместить выбранные позиции (@selectedItems.Count шт.)</h5>
+                            <button type="button" class="btn-close" @onclick="CloseMoveModal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <select class="form-select" @bind="moveToGroupId">
+                                <option value="">Выберите группу</option>
+                                @foreach (var group in groups.OrderBy(g => g.stageId))
+                                {
+                                    <option value="@group.id">@group.name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" @onclick="CloseMoveModal">Отмена</button>
+                            <button class="btn btn-primary" @onclick="MoveToGroup">Переместить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .estimate-page {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding-bottom: 100px;
+    }
+    
+    .breadcrumbs {
+        font-size: 14px;
+    }
+    
+    .breadcrumbs a {
+        color: #6c757d;
+        text-decoration: none;
+    }
+    
+    .breadcrumbs a:hover {
+        color: #0d6efd;
+    }
+    
+    .stage-card {
+        border-left: 3px solid #0d6efd;
+    }
+    
+    .group-card {
+        border-left: 3px solid #6c757d;
+    }
+    
+    .table th {
+        font-size: 0.8rem;
+        white-space: nowrap;
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .table td {
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+    
+    .table-primary {
+        background-color: #cfe2ff !important;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1050;
+    }
+    
+    .position-sticky-bottom {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        box-shadow: 0 -4px 6px rgba(0,0,0,0.05);
+    }
+    
+    .form-control-sm, .form-select-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8rem;
+    }
+</style>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    
+    private EstimateJson? estimate;
+    private string objectName = "";
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private List<StageJson> stages = new();
+    private List<GroupJson> groups = new();
+    private List<ItemJson> items = new();
+    private HashSet<int> selectedItems = new();
+    
+    private int? editingStageId;
+    private string editingStageName = "";
+    private int? editingGroupId;
+    private string editingGroupName = "";
+    private bool showAddDialog = false;
+    private NewItem newItem = new();
+    private bool showMoveModal = false;
+    private int? moveToGroupId;
+    
+    private Timer? saveTimer;
+
+    private class EstimateJson
+    {
+        public int id { get; set; }
+        public string name { get; set; } = "";
+        public string status { get; set; } = "";
+        public string? managerName { get; set; }
+        public int constructionObjectId { get; set; }
+        public decimal totalCost { get; set; }
+        public decimal customerPrice { get; set; }
+    }
+
+    private class StageJson
+    {
+        public int id { get; set; }
+        public string name { get; set; } = "";
+        public int orderIndex { get; set; }
+        public bool isExpanded { get; set; } = true;
+    }
+
+    private class GroupJson
+    {
+        public int id { get; set; }
+        public int? stageId { get; set; }
+        public string name { get; set; } = "";
+        public int orderIndex { get; set; }
+        public bool isExpanded { get; set; } = true;
+    }
+
+    private class ItemJson
+    {
+        public int id { get; set; }
+        public int? groupId { get; set; }
+        public int orderIndex { get; set; }
+        public string name { get; set; } = "";
+        public string unit { get; set; } = "";
+        public decimal quantity { get; set; }
+        public decimal price { get; set; }
+        public decimal markup { get; set; }
+        public string type { get; set; } = "P";
+        public decimal total => quantity * price;
+        public decimal customerPrice => price * (1 + markup / 100);
+        public decimal customerTotal => quantity * customerPrice;
+    }
+
+    private class NewItem
+    {
+        public string name { get; set; } = "";
+        public string unit { get; set; } = "шт";
+        public decimal quantity { get; set; } = 1;
+        public decimal price { get; set; } = 0;
+        public decimal markup { get; set; } = 0;
+        public string type { get; set; } = "P";
+        public int? stageId { get; set; }
+        public int? groupId { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            
+            estimate = await Http.GetFromJsonAsync<EstimateJson>($"http://localhost:5050/api/Estimates/{Id}");
+            
+            if (estimate != null)
+            {
+                var obj = await Http.GetFromJsonAsync<ConstructionObject>($"http://localhost:5050/api/ConstructionObjects/{estimate.constructionObjectId}");
+                objectName = obj?.Name ?? "Неизвестно";
+                
+                stages = await Http.GetFromJsonAsync<List<StageJson>>($"http://localhost:5050/api/EstimateStages/by-estimate/{Id}") ?? new();
+                
+                groups = new List<GroupJson>();
+                foreach (var stage in stages)
+                {
+                    var stageGroups = await Http.GetFromJsonAsync<List<GroupJson>>($"http://localhost:5050/api/EstimateItemGroups/by-stage/{stage.id}") ?? new();
+                    groups.AddRange(stageGroups);
+                }
+                
+                items = await Http.GetFromJsonAsync<List<ItemJson>>($"http://localhost:5050/api/EstimateItems/by-estimate/{Id}") ?? new();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task AddStage()
+    {
+        var newStage = new { estimateId = Id, name = $"Этап {stages.Count + 1}", orderIndex = stages.Count, isExpanded = true };
+        try
+        {
+            var response = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateStages", newStage);
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<StageJson>();
+                if (created != null) stages.Add(created);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка добавления этапа: {ex.Message}");
+        }
+    }
+
+    private async Task AddGroup(int stageId)
+    {
+        var newGroup = new { stageId = stageId, name = "Группа", orderIndex = groups.Count(g => g.stageId == stageId), isExpanded = true };
+        try
+        {
+            var response = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItemGroups", newGroup);
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<GroupJson>();
+                if (created != null) groups.Add(created);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка добавления группы: {ex.Message}");
+        }
+    }
+
+    private void ShowAddItemDialog(int? stageId)
+    {
+        newItem = new NewItem { stageId = stageId };
+        showAddDialog = true;
+    }
+
+    private void CloseAddDialog()
+    {
+        showAddDialog = false;
+        newItem = new NewItem();
+    }
+
+    private async Task AddItem()
+    {
+        if (string.IsNullOrWhiteSpace(newItem.name) || newItem.stageId == null)
+        {
+            await JS.InvokeVoidAsync("alert", "Заполните название и выберите этап");
+            return;
+        }
+
+        var itemToAdd = new
+        {
+            estimateId = Id,
+            groupId = newItem.groupId,
+            name = newItem.name,
+            unit = newItem.unit,
+            quantity = newItem.quantity,
+            price = newItem.price,
+            markup = newItem.markup,
+            type = newItem.type,
+            orderIndex = items.Count
+        };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItems", itemToAdd);
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadData();
+                CloseAddDialog();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка добавления позиции: {ex.Message}");
+        }
+    }
+
+    private void ToggleStage(int stageId)
+    {
+        var stage = stages.FirstOrDefault(s => s.id == stageId);
+        if (stage != null) stage.isExpanded = !stage.isExpanded;
+    }
+
+    private void ToggleGroup(int groupId)
+    {
+        var group = groups.FirstOrDefault(g => g.id == groupId);
+        if (group != null) group.isExpanded = !group.isExpanded;
+    }
+
+    private void ToggleItemSelection(int itemId)
+    {
+        if (selectedItems.Contains(itemId))
+            selectedItems.Remove(itemId);
+        else
+            selectedItems.Add(itemId);
+    }
+
+    private void ToggleSelectAllInGroup(int groupId)
+    {
+        var groupItemIds = items.Where(i => i.groupId == groupId).Select(i => i.id).ToList();
+        if (groupItemIds.All(id => selectedItems.Contains(id)))
+        {
+            foreach (var id in groupItemIds)
+                selectedItems.Remove(id);
+        }
+        else
+        {
+            foreach (var id in groupItemIds)
+                selectedItems.Add(id);
+        }
+    }
+
+    private void ToggleSelectAllInStage(int stageId)
+    {
+        var stageGroups = groups.Where(g => g.stageId == stageId).Select(g => g.id).ToList();
+        var stageItemIds = items.Where(i => i.groupId == null || stageGroups.Contains(i.groupId.Value))
+                               .Select(i => i.id).ToList();
+        
+        if (stageItemIds.All(id => selectedItems.Contains(id)))
+        {
+            foreach (var id in stageItemIds)
+                selectedItems.Remove(id);
+        }
+        else
+        {
+            foreach (var id in stageItemIds)
+                selectedItems.Add(id);
+        }
+    }
+
+    private bool IsAllSelectedInGroup(int groupId)
+    {
+        var groupItemIds = items.Where(i => i.groupId == groupId).Select(i => i.id).ToList();
+        return groupItemIds.Any() && groupItemIds.All(id => selectedItems.Contains(id));
+    }
+
+    private bool IsAllSelectedInStage(int stageId)
+    {
+        var stageGroups = groups.Where(g => g.stageId == stageId).Select(g => g.id).ToList();
+        var stageItemIds = items.Where(i => i.groupId == null || stageGroups.Contains(i.groupId.Value))
+                               .Select(i => i.id).ToList();
+        return stageItemIds.Any() && stageItemIds.All(id => selectedItems.Contains(id));
+    }
+
+    private async Task DeleteItem(int itemId)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", "Удалить позицию?"))
+        {
+            await Http.DeleteAsync($"http://localhost:5050/api/EstimateItems/{itemId}");
+            items.RemoveAll(i => i.id == itemId);
+            selectedItems.Remove(itemId);
+        }
+    }
+
+    private async Task DeleteSelected()
+    {
+        if (selectedItems.Count == 0) return;
+        if (await JS.InvokeAsync<bool>("confirm", $"Удалить {selectedItems.Count} позиций?"))
+        {
+            foreach (var id in selectedItems.ToList())
+            {
+                await DeleteItem(id);
+            }
+        }
+    }
+
+    private async Task DeleteStage(int stageId)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", "Удалить этап?"))
+        {
+            await Http.DeleteAsync($"http://localhost:5050/api/EstimateStages/{stageId}");
+            stages.RemoveAll(s => s.id == stageId);
+            groups.RemoveAll(g => g.stageId == stageId);
+            items.RemoveAll(i => i.groupId == null && i.id == stageId);
+        }
+    }
+
+    private async Task DeleteGroup(int groupId)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", "Удалить группу?"))
+        {
+            await Http.DeleteAsync($"http://localhost:5050/api/EstimateItemGroups/{groupId}");
+            groups.RemoveAll(g => g.id == groupId);
+            items.RemoveAll(i => i.groupId == groupId);
+        }
+    }
+
+    private void EditStage(StageJson stage)
+    {
+        editingStageId = stage.id;
+        editingStageName = stage.name;
+    }
+
+    private async Task SaveStage(StageJson stage)
+    {
+        if (!string.IsNullOrWhiteSpace(editingStageName))
+        {
+            stage.name = editingStageName;
+            var update = new { stage.id, name = editingStageName };
+            await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateStages/{stage.id}", update);
+        }
+        CancelEditStage();
+    }
+
+    private void CancelEditStage()
+    {
+        editingStageId = null;
+        editingStageName = "";
+    }
+
+    private void EditGroup(GroupJson group)
+    {
+        editingGroupId = group.id;
+        editingGroupName = group.name;
+    }
+
+    private async Task SaveGroup(GroupJson group)
+    {
+        if (!string.IsNullOrWhiteSpace(editingGroupName))
+        {
+            group.name = editingGroupName;
+            var update = new { group.id, name = editingGroupName };
+            await Http.PutAsJsonAsync($"http://localhost:5050/api/EstimateItemGroups/{group.id}", update);
+        }
+        CancelEditGroup();
+    }
+
+    private void CancelEditGroup()
+    {
+        editingGroupId = null;
+        editingGroupName = "";
+    }
+
+    private async Task HandleEnter(KeyboardEventArgs e, object target)
+    {
+        if (e.Key == "Enter")
+        {
+            if (target is StageJson stage)
+            {
+                await SaveStage(stage);
+            }
+            else if (target is GroupJson group)
+            {
+                await SaveGroup(group);
+            }
+        }
+    }
+
+    private async Task CopySelected()
+    {
+        if (selectedItems.Count == 0) return;
+        
+        var itemsToCopy = items.Where(i => selectedItems.Contains(i.id)).ToList();
+        foreach (var item in itemsToCopy)
+        {
+            var newItem = new
+            {
+                estimateId = Id,
+                groupId = item.groupId,
+                name = $"{item.name} (копия)",
+                unit = item.unit,
+                quantity = item.quantity,
+                price = item.price,
+                markup = item.markup,
+                type = item.type,
+                orderIndex = items.Count
+            };
+            await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItems", newItem);
+        }
+        await LoadData();
+        selectedItems.Clear();
+    }
+
+    private void ShowMoveToGroup()
+    {
+        if (selectedItems.Count > 0)
+        {
+            showMoveModal = true;
+        }
+    }
+
+    private void CloseMoveModal()
+    {
+        showMoveModal = false;
+        moveToGroupId = null;
+    }
+
+    private async Task MoveToGroup()
+    {
+        if (moveToGroupId == null)
+        {
+            await JS.InvokeVoidAsync("alert", "Выберите группу");
+            return;
+        }
+
+        var orders = selectedItems.Select((id, index) => new
+        {
+            id = id,
+            orderIndex = index,
+            groupId = moveToGroupId
+        }).ToList();
+
+        try
+        {
+            await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateItems/reorder", orders);
+            await LoadData();
+            selectedItems.Clear();
+            CloseMoveModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка перемещения: {ex.Message}");
+        }
+    }
+
+    private decimal GetStageTotal(int stageId)
+    {
+        var stageGroups = groups.Where(g => g.stageId == stageId).Select(g => g.id).ToList();
+        var stageItems = items.Where(i => stageGroups.Contains(i.groupId ?? 0)).ToList();
+        return stageItems.Sum(i => i.total);
+    }
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Черновик" => "bg-secondary",
+        "В работе" => "bg-primary",
+        "Завершена" => "bg-success",
+        _ => "bg-info"
+    };
+
+    private decimal workCost => items.Where(i => i.type == "P").Sum(i => i.total);
+    private decimal materialCost => items.Where(i => i.type == "M").Sum(i => i.total);
+    private decimal machineryCost => items.Where(i => i.type == "A").Sum(i => i.total);
+    private decimal deliveryCost => items.Where(i => i.type == "D").Sum(i => i.total);
+    private decimal totalCost => items.Sum(i => i.total);
+    
+    private decimal customerWorkCost => items.Where(i => i.type == "P").Sum(i => i.customerTotal);
+    private decimal customerMaterialCost => items.Where(i => i.type == "M").Sum(i => i.customerTotal);
+    private decimal customerDeliveryCost => items.Where(i => i.type == "D").Sum(i => i.customerTotal);
+    private decimal customerTotal => items.Sum(i => i.customerTotal);
+    
+    private decimal profitWork => customerWorkCost - workCost;
+    private decimal profitMaterial => customerMaterialCost - materialCost;
+    private decimal profitDelivery => customerDeliveryCost - deliveryCost;
+    private decimal profitTotal => customerTotal - totalCost;
+    private decimal profitPercentage => totalCost > 0 ? (profitTotal / totalCost) * 100 : 0;
+    private decimal selectedSum => items.Where(i => selectedItems.Contains(i.id)).Sum(i => i.total);
+    private decimal selectedCustomerSum => items.Where(i => selectedItems.Contains(i.id)).Sum(i => i.customerTotal);
+}

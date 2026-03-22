@@ -1,0 +1,427 @@
+@page "/object/{id:int}"
+@using Feniks.Shared.Models
+@using Feniks.Web.Services
+@using SharedEstimate = Feniks.Shared.Models.Estimate
+@implements IDisposable
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject DataSyncService DataSyncService
+
+<style>
+/* Стили для статусов с прозрачностью 90% */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    text-align: center;
+    min-width: 100px;
+    width: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.status-badge {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.9) 0%, rgba(75, 85, 99, 0.9) 100%);
+}
+
+.status-badge.status-draft {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.9) 0%, rgba(75, 85, 99, 0.9) 100%);
+}
+
+.status-badge.status-approval {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%);
+}
+
+.status-badge.status-inprogress {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(217, 119, 6, 0.9) 100%);
+}
+
+.status-badge.status-completed {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%);
+}
+
+.status-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.95) 0%, rgba(75, 85, 99, 0.95) 100%);
+}
+
+.status-badge.status-draft:hover {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.95) 0%, rgba(75, 85, 99, 0.95) 100%);
+}
+
+.status-badge.status-approval:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%);
+}
+
+.status-badge.status-inprogress:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(217, 119, 6, 0.95) 100%);
+}
+
+.status-badge.status-completed:hover {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);
+}
+
+/* Стили для компактных карточек */
+.compact-card {
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.compact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.stat-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+</style>
+
+<div class="container py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3">Загрузка объекта...</p>
+        </div>
+    }
+    else if (obj == null)
+    {
+        <div class="alert alert-danger">Объект не найден</div>
+    }
+    else
+    {
+        <!-- Заголовок объекта -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h2 class="fw-bold">@obj.Name</h2>
+                <div class="d-flex gap-3 text-muted">
+                    <span><i class="bi bi-person me-1"></i>@obj.Customer</span>
+                    <span><i class="bi bi-geo-alt me-1"></i>@obj.Address</span>
+                </div>
+            </div>
+            <button class="btn btn-outline-primary" @onclick="EditObject">
+                <i class="bi bi-pencil me-1"></i>Редактировать
+            </button>
+        </div>
+
+        <!-- Компактные финансовые показатели в одну строку с иконками -->
+        <div class="row g-2 mb-4 row-cols-2 row-cols-sm-3 row-cols-md-6">
+            <div class="col">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-primary bg-opacity-10 p-1 rounded-circle stat-icon">
+                            <i class="bi bi-files fs-6 text-primary"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Смет</span>
+                            <span class="fw-bold" style="font-size: 1rem;">@(estimates?.Count ?? 0)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-info bg-opacity-10 p-1 rounded-circle stat-icon">
+                            <i class="bi bi-calculator fs-6 text-info"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Себ-ть</span>
+                            <span class="fw-bold" style="font-size: 1rem;">@FormatNumber(totalCost) ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-warning bg-opacity-10 p-1 rounded-circle stat-icon">
+                            <i class="bi bi-graph-up-arrow fs-6" style="color: #b45f06;"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Прибыль</span>
+                            <span class="fw-bold" style="font-size: 1rem; color: #b45f06;">@FormatNumber(totalProfit) ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-success bg-opacity-10 p-1 rounded-circle stat-icon">
+                            <i class="bi bi-people fs-6 text-success"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Заказчик</span>
+                            <span class="fw-bold text-success" style="font-size: 1rem;">@FormatNumber(totalCustomerPrice) ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-info bg-opacity-10 p-1 rounded-circle stat-icon">
+                            <i class="bi bi-check2-circle fs-6 text-info"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Оплачено</span>
+                            <span class="fw-bold text-info" style="font-size: 1rem;">@FormatNumber(totalPaid) ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="card border-0 bg-light compact-card py-2 px-2 h-100">
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="bg-danger bg-opacity-10 p-1 rounded-circle stat-icon">
+                            <i class="bi bi-exclamation-triangle fs-6 text-danger"></i>
+                        </div>
+                        <div class="d-flex flex-column lh-1">
+                            <span class="text-muted small" style="font-size: 0.7rem;">Долг</span>
+                            <span class="fw-bold text-danger" style="font-size: 1rem;">@FormatNumber(totalDebt) ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список смет объекта -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">Сметы объекта</h6>
+                    <button class="btn btn-primary btn-sm" @onclick="AddNewEstimate">
+                        <i class="bi bi-plus-circle me-1"></i>Новая смета
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                @if (estimates == null || !estimates.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-file-earmark-text fs-1 d-block mb-2"></i>
+                        <p class="small">У объекта нет смет</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="px-3 py-2">Название сметы</th>
+                                    <th class="py-2">Статус</th>
+                                    <th class="py-2 text-end">Себестоимость</th>
+                                    <th class="py-2 text-end">Прибыль</th>
+                                    <th class="py-2 text-end">Для заказчика</th>
+                                    <th class="py-2 text-end">Дата</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var est in estimates)
+                                {
+                                    var profit = est.CustomerPrice - est.TotalCost;
+                                    var profitPercent = est.TotalCost > 0 ? Math.Round(profit / est.TotalCost * 100, 1) : 0;
+                                    <tr style="cursor: pointer;" @onclick="() => GoToEstimate(est.Id)" class="border-bottom">
+                                        <td class="px-3 py-2 fw-medium">@est.Name</td>
+                                        <td class="py-2">
+                                            <span class="status-badge @GetStatusBadgeClass(est.Status)">@est.Status</span>
+                                        </td>
+                                        <td class="py-2 text-end fw-medium">@FormatNumber(est.TotalCost) ₽</td>
+                                        <td class="py-2 text-end" style="color: #b45f06;">
+                                            <span class="fw-bold">@FormatNumber(profit) ₽</span>
+                                            <small class="text-muted ms-1" style="font-size: 0.7rem;">(@profitPercent.ToString("F1")%)</small>
+                                        </td>
+                                        <td class="py-2 text-end text-success fw-bold">@FormatNumber(est.CustomerPrice) ₽</td>
+                                        <td class="py-2 text-end text-muted" style="font-size: 0.8rem;">@est.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool isLoading = true;
+    private ConstructionObject? obj;
+    private List<SharedEstimate>? estimates;
+    private decimal totalCost = 0;
+    private decimal totalCustomerPrice = 0;
+    private decimal totalProfit = 0;
+    private decimal totalPaid = 0;
+    private decimal totalDebt = 0;
+    private int currentId;
+
+    protected override void OnInitialized()
+    {
+        DataSyncService.OnEstimateChanged += OnEstimateChanged;
+        DataSyncService.OnObjectChanged += OnObjectChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentId = Id;
+        Console.WriteLine($"🔄 ObjectPage инициализирован с ID: {Id}");
+        await LoadData();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (currentId != Id)
+        {
+            currentId = Id;
+            Console.WriteLine($"🔄 Параметр ID изменился на: {Id}");
+            _ = LoadData();
+        }
+    }
+
+    private async Task OnEstimateChanged(int estimateId)
+    {
+        if (estimates != null && estimates.Any(e => e.Id == estimateId))
+        {
+            Console.WriteLine($"📢 Получено уведомление об изменении сметы {estimateId}, перезагружаем объект {Id}");
+            await InvokeAsync(async () =>
+            {
+                await LoadData();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task OnObjectChanged(int objectId)
+    {
+        if (objectId == Id)
+        {
+            Console.WriteLine($"📢 Получено уведомление об изменении объекта {objectId}, перезагружаем");
+            await InvokeAsync(async () =>
+            {
+                await LoadData();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            Console.WriteLine($"📥 Загрузка данных для объекта ID: {Id}");
+            
+            obj = await Http.GetFromJsonAsync<ConstructionObject>($"http://localhost:5050/api/ConstructionObjects/{Id}");
+            
+            if (obj != null)
+            {
+                var allEstimates = await Http.GetFromJsonAsync<List<SharedEstimate>>("http://localhost:5050/api/Estimates");
+                if (allEstimates != null)
+                {
+                    estimates = allEstimates.Where(e => e.ConstructionObjectId == Id).ToList();
+                    
+                    totalCost = estimates.Sum(e => e.TotalCost);
+                    totalCustomerPrice = estimates.Sum(e => e.CustomerPrice);
+                    totalProfit = totalCustomerPrice - totalCost;
+                    
+                    totalPaid = totalCustomerPrice * 0.3m;
+                    totalDebt = totalCustomerPrice - totalPaid;
+                    
+                    Console.WriteLine($"✅ Данные для объекта {Id} загружены");
+                    Console.WriteLine($"   Себестоимость: {totalCost:N0}");
+                    Console.WriteLine($"   Для заказчика: {totalCustomerPrice:N0}");
+                    Console.WriteLine($"   Прибыль: {totalProfit:N0}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetStatusBadgeClass(string status) => status switch
+    {
+        "Черновик" => "status-draft",
+        "В работе" => "status-inprogress",
+        "Согласование" => "status-approval",
+        "Завершена" => "status-completed",
+        _ => "status-draft"
+    };
+
+    private void EditObject()
+    {
+        Navigation.NavigateTo($"/object/{Id}/edit");
+    }
+
+    private void AddNewEstimate()
+    {
+        Navigation.NavigateTo($"/estimate/new/{Id}");
+    }
+
+    private void GoToEstimate(int estimateId)
+    {
+        Navigation.NavigateTo($"/estimate/{estimateId}");
+    }
+
+    // Метод для безопасного форматирования чисел
+    private string FormatNumber(decimal value)
+    {
+        try
+        {
+            if (value >= 1_000_000_000)
+                return $"{(value / 1_000_000_000):F1} млрд";
+            if (value >= 1_000_000)
+                return $"{(value / 1_000_000):F1} млн";
+            if (value >= 1_000)
+                return $"{(value / 1_000):F1} тыс";
+            return value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch
+        {
+            return "0";
+        }
+    }
+
+    public void Dispose()
+    {
+        DataSyncService.OnEstimateChanged -= OnEstimateChanged;
+        DataSyncService.OnObjectChanged -= OnObjectChanged;
+    }
+}

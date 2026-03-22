@@ -1,0 +1,183 @@
+@page "/estimate/new/{objectId:int}"
+@using Feniks.Shared.Models
+@using SharedEstimate = Feniks.Shared.Models.Estimate
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject NotificationService NotificationService
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">➕ Новая смета</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Название сметы *</label>
+                        <input type="text" class="form-control" @bind="estimateName" 
+                               placeholder="Например: Основная смета на строительство" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Объект строительства</label>
+                        <input type="text" class="form-control" value="@objectName" disabled readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Описание</label>
+                        <textarea class="form-control" @bind="estimateDescription" rows="3" 
+                                  placeholder="Описание сметы"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Статус</label>
+                            <select class="form-select" @bind="estimateStatus">
+                                <option value="Черновик">Черновик</option>
+                                <option value="В работе">В работе</option>
+                                <option value="Согласование">Согласование</option>
+                                <option value="Утверждена">Утверждена</option>
+                                <option value="Завершена">Завершена</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Менеджер</label>
+                            <input type="text" class="form-control" @bind="managerName" 
+                                   placeholder="ФИО менеджера" />
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button class="btn btn-secondary" @onclick="Cancel">Отмена</button>
+                        <button class="btn btn-primary" @onclick="SaveEstimate" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            Создать смету
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int ObjectId { get; set; }
+
+    private bool isSaving = false;
+    private string errorMessage = "";
+
+    private string estimateName = "";
+    private string estimateDescription = "";
+    private string estimateStatus = "Черновик";
+    private string managerName = "";
+    private string objectName = "";
+
+    private ConstructionObject? obj;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadObject();
+    }
+
+    private async Task LoadObject()
+    {
+        try
+        {
+            obj = await Http.GetFromJsonAsync<ConstructionObject>($"http://localhost:5050/api/ConstructionObjects/{ObjectId}");
+            if (obj != null)
+            {
+                objectName = obj.Name;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки объекта: {ex.Message}");
+            errorMessage = "Не удалось загрузить информацию об объекте";
+        }
+    }
+
+    private async Task SaveEstimate()
+    {
+        if (string.IsNullOrWhiteSpace(estimateName))
+        {
+            errorMessage = "Название сметы обязательно";
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            var estimate = new SharedEstimate
+            {
+                Name = estimateName,
+                Description = estimateDescription,
+                Status = estimateStatus,
+                ManagerName = managerName,
+                ConstructionObjectId = ObjectId,
+                CreatedAt = DateTime.Now,
+                TotalCost = 0,
+                CustomerPrice = 0
+            };
+
+            var response = await Http.PostAsJsonAsync("http://localhost:5050/api/Estimates", estimate);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<SharedEstimate>();
+                
+                if (created != null)
+                {
+                    // Создаем начальный этап для новой сметы
+                    var defaultStage = new
+                    {
+                        EstimateId = created.Id,
+                        Name = "Новый этап",
+                        Description = "",
+                        OrderIndex = 0,
+                        IsExpanded = true
+                    };
+                    
+                    await Http.PostAsJsonAsync("http://localhost:5050/api/EstimateStages", defaultStage);
+                    
+                    // Уведомляем NavMenu об изменении данных
+                    NotificationService.NotifyDataChanged();
+                    
+                    await JS.InvokeVoidAsync("alert", "Смета успешно создана!");
+                    Navigation.NavigateTo($"/estimate/{created.Id}");
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Ошибка API: {errorContent}");
+                errorMessage = "Ошибка при создании сметы";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка: {ex.Message}";
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo($"/object/{ObjectId}");
+    }
+}

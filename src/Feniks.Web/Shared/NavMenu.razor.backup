@@ -1,0 +1,302 @@
+﻿@using Feniks.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="sidebar-wrapper">
+    <div class="sidebar-header">
+        <div class="logo mb-3">
+            <h5 class="text-white mb-0"> Feniks</h5>
+        </div>
+        <div class="search-box">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" class="form-control form-control-sm" 
+                   placeholder="Поиск объектов..." @bind="searchTerm" @oninput="FilterObjects" />
+        </div>
+    </div>
+
+    <div class="sidebar-content">
+        <div class="menu-section">
+            <div class="menu-header d-flex justify-content-between align-items-center text-muted mb-2">
+                <span>ОБЪЕКТЫ И СМЕТЫ</span>
+                <span class="badge bg-secondary">@totalObjects</span>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-white-50 text-center py-4">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Загрузка...
+                </div>
+            }
+            else if (objects == null || !objects.Any())
+            {
+                <div class="text-white-50 text-center py-4">
+                    <i class="bi bi-folder-open fs-4 d-block mb-2"></i>
+                    Нет объектов
+                </div>
+            }
+            else
+            {
+                @foreach (var obj in objects)
+                {
+                    <div class="tree-item">
+                        <div class="tree-item-header d-flex align-items-center" 
+                             @onclick="() => ToggleObject(obj.Id)">
+                            <span class="toggle-icon me-1">@(expandedObjects.Contains(obj.Id) ? "" : "")</span>
+                            <span class="object-icon me-2"></span>
+                            <NavLink class="text-white text-decoration-none flex-grow-1" 
+                                     href="@($"/object/{obj.Id}")" 
+                                     @onclick:stopPropagation="true">
+                                @obj.Name
+                            </NavLink>
+                            <span class="badge @(GetEstimateCount(obj.Id) > 0 ? "bg-info" : "bg-secondary")" 
+                                  style="font-size: 10px;">
+                                @GetEstimateCount(obj.Id)
+                            </span>
+                        </div>
+
+                        @if (expandedObjects.Contains(obj.Id) && obj.Estimates != null && obj.Estimates.Any())
+                        {
+                            <div class="tree-children ms-4">
+                                @foreach (var est in obj.Estimates)
+                                {
+                                    <div class="tree-child-item d-flex align-items-center py-1">
+                                        <span class="child-icon me-2"></span>
+                                        <NavLink class="text-white-50 text-decoration-none small" 
+                                                 href="@($"/estimate/{est.Id}")">
+                                            @est.Name
+                                        </NavLink>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .sidebar-wrapper {
+        height: 100vh;
+        background: linear-gradient(180deg, #1a1f2b 0%, #141824 100%);
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .sidebar-header {
+        padding: 1.5rem 1rem 1rem 1rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo h5 {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .search-box {
+        position: relative;
+        margin-top: 1rem;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .search-box input {
+        background-color: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        padding-left: 30px;
+        border-radius: 8px;
+    }
+
+    .search-box input:focus {
+        background-color: rgba(255,255,255,0.15);
+        border-color: rgba(255,255,255,0.2);
+        box-shadow: none;
+        color: white;
+    }
+
+    .search-box input::placeholder {
+        color: #6c757d;
+    }
+
+    .sidebar-content {
+        padding: 1rem 0.75rem;
+    }
+
+    .menu-header {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        padding: 0 0.5rem;
+    }
+
+    .tree-item {
+        margin-bottom: 0.25rem;
+    }
+
+    .tree-item-header {
+        padding: 0.4rem 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tree-item-header:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+
+    .tree-children {
+        margin-top: 0.25rem;
+        border-left: 1px dashed rgba(255,255,255,0.2);
+        padding-left: 0.5rem;
+    }
+
+    .tree-child-item {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .tree-child-item:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
+
+    .tree-child-item .nav-link {
+        color: rgba(255,255,255,0.6) !important;
+        padding: 0;
+    }
+
+    .tree-child-item .nav-link:hover {
+        color: white !important;
+    }
+
+    .toggle-icon {
+        color: #6c757d;
+        font-size: 0.7rem;
+    }
+
+    .object-icon {
+        font-size: 1rem;
+    }
+
+    .child-icon {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.05);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2);
+        border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.3);
+    }
+</style>
+
+@code {
+    private bool isLoading = true;
+    private List<ConstructionObject>? objects;
+    private List<ConstructionObject>? filteredObjects;
+    private HashSet<int> expandedObjects = new();
+    private string searchTerm = string.Empty;
+    private int totalObjects = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            
+            // Загружаем объекты со сметами
+            objects = await Http.GetFromJsonAsync<List<ConstructionObject>>("http://localhost:5050/api/ConstructionObjects");
+            
+            // Загружаем сметы и привязываем к объектам
+            var allEstimates = await Http.GetFromJsonAsync<List<Estimate>>("http://localhost:5050/api/Estimates");
+            
+            if (objects != null && allEstimates != null)
+            {
+                foreach (var obj in objects)
+                {
+                    obj.Estimates = allEstimates
+                        .Where(e => e.ConstructionObjectId == obj.Id)
+                        .ToList();
+                }
+            }
+            
+            filteredObjects = objects;
+            totalObjects = objects?.Count ?? 0;
+            
+            Console.WriteLine($"Загружено объектов: {totalObjects}");
+            if (objects != null)
+            {
+                foreach (var obj in objects)
+                {
+                    Console.WriteLine($"Объект {obj.Id}: {obj.Name}, смет: {obj.Estimates?.Count ?? 0}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private int GetEstimateCount(int objectId)
+    {
+        var obj = objects?.FirstOrDefault(o => o.Id == objectId);
+        return obj?.Estimates?.Count ?? 0;
+    }
+
+    private void FilterObjects()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredObjects = objects;
+        }
+        else
+        {
+            filteredObjects = objects?
+                .Where(obj => obj.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void ToggleObject(int objectId)
+    {
+        if (expandedObjects.Contains(objectId))
+        {
+            expandedObjects.Remove(objectId);
+        }
+        else
+        {
+            expandedObjects.Add(objectId);
+        }
+    }
+}

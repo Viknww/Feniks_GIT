@@ -1,0 +1,593 @@
+﻿@using Feniks.Shared.Models
+@using Feniks.Web.Services
+@implements IDisposable
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
+@inject DataSyncService DataSyncService
+
+<div class="sidebar-wrapper" style="width: 280px; overflow-y: auto; overflow-x: hidden;">
+    <div class="sidebar-header" style="padding: 1rem;">
+        <div class="logo d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-layers fs-4 text-primary"></i>
+            <h5 class="mb-0 text-white">ОБЪЕКТЫ И СМЕТЫ</h5>
+        </div>
+
+        <!-- Строка поиска и кнопки -->
+        <div class="d-flex gap-2 mb-3">
+            <div class="search-box flex-grow-1 position-relative">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="form-control form-control-sm" 
+                       placeholder="Поиск объектов и смет..." 
+                       @bind="searchTerm" 
+                       @oninput="OnSearchInput" />
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" title="Сортировка по алфавиту" @onclick="SortObjects">
+                <i class="bi bi-sort-alpha-down"></i>
+            </button>
+            <button class="btn btn-outline-primary btn-sm" title="Добавить новый объект" @onclick="GoToNewObject">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="sidebar-content" style="padding: 0 1rem 1rem 1rem;">
+        <div class="menu-section">
+            @if (isLoading)
+            {
+                <div class="text-white-50 text-center py-4">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Загрузка...
+                </div>
+            }
+            else if (filteredObjects == null || !filteredObjects.Any())
+            {
+                <div class="text-white-50 text-center py-4">
+                    <i class="bi bi-folder-open fs-4 d-block mb-2"></i>
+                    @(string.IsNullOrEmpty(searchTerm) ? "Нет объектов" : "Ничего не найдено")
+                </div>
+            }
+            else
+            {
+                <!-- Дерево объектов и смет с фиксированной структурой -->
+                <div class="tree-view" style="min-height: 300px;">
+                    @foreach (var obj in filteredObjects)
+                    {
+                        var isObjectActive = IsObjectActive(obj.Id);
+                        var hasActiveEstimate = HasActiveEstimate(obj.Id);
+                        var objectClass = isObjectActive ? "active-object" : (hasActiveEstimate ? "parent-of-active" : "");
+                        
+                        <div class="tree-item @objectClass" style="margin-bottom: 0.5rem;">
+                            <!-- Заголовок объекта - фиксированная высота 36px -->
+                            <div class="tree-item-header d-flex align-items-center gap-2" style="height: 36px; padding: 0 4px;">
+                                <span class="toggle-icon" @onclick="() => ToggleObject(obj.Id)" style="cursor: pointer; width: 20px; display: inline-flex; justify-content: center;">
+                                    <i class="bi @(expandedObjects.Contains(obj.Id) ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                                </span>
+                                
+                                <span class="object-icon" @onclick="() => ToggleObject(obj.Id)" style="cursor: pointer; width: 20px; display: inline-flex; justify-content: center;">
+                                    <i class="bi bi-building"></i>
+                                </span>
+                                
+                                <span class="flex-grow-1 text-truncate @(isObjectActive || hasActiveEstimate ? "text-white fw-bold" : "text-white-50")" 
+                                      @onclick="() => GoToObject(obj.Id)" 
+                                      style="cursor: pointer; max-width: 160px; font-size: 0.9rem; line-height: 36px;">
+                                    @obj.Name
+                                </span>
+                                
+                                <span class="badge @(GetEstimateCount(obj.Id) > 0 ? "bg-info" : "bg-secondary")" 
+                                      style="font-size: 10px; cursor: pointer; min-width: 24px; text-align: center;"
+                                      @onclick="() => ToggleObject(obj.Id)">
+                                    @GetEstimateCount(obj.Id)
+                                </span>
+                            </div>
+
+                            @if (expandedObjects.Contains(obj.Id))
+                            {
+                                <div class="tree-children" style="margin-left: 24px; margin-top: 4px;">
+                                    @if (obj.Estimates != null && obj.Estimates.Any())
+                                    {
+                                        @foreach (var est in obj.Estimates)
+                                        {
+                                            var isActive = IsEstimateActive(est.Id);
+                                            var activeClass = isActive ? "active-estimate" : "";
+                                            
+                                            <div class="tree-child-item d-flex align-items-center gap-2 py-1 @activeClass"
+                                                 @onclick="() => GoToEstimate(est.Id, obj.Id)"
+                                                 style="cursor: pointer; height: 28px; padding: 0 4px;">
+                                                <i class="bi bi-dot child-icon" style="width: 20px;"></i>
+                                                <span class="@(isActive ? "text-white fw-bold" : "text-white-50") small flex-grow-1 text-truncate" 
+                                                      style="max-width: 160px; line-height: 28px; font-size: 0.85rem;">@est.Name</span>
+                                                @if (isActive)
+                                                {
+                                                    <i class="bi bi-check-circle-fill small me-1" style="color: #f1c40f !important; width: 16px;"></i>
+                                                }
+                                                else
+                                                {
+                                                    <span style="width: 16px;"></span> <!-- Пустой элемент для сохранения структуры -->
+                                                }
+                                            </div>
+                                        }
+                                    }
+
+                                    <div class="tree-child-item d-flex align-items-center gap-2 py-1 text-primary"
+                                         @onclick="() => GoToNewEstimate(obj.Id)"
+                                         style="cursor: pointer; height: 28px; padding: 0 4px;">
+                                        <i class="bi bi-plus-circle" style="width: 20px;"></i>
+                                        <span class="small" style="line-height: 28px; font-size: 0.85rem;">Добавить смету</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .sidebar-wrapper {
+        width: 280px;
+        background: linear-gradient(180deg, #1a1f2b 0%, #141824 100%);
+        color: white;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: fixed;
+    }
+    
+    .sidebar-wrapper::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .sidebar-wrapper::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+    
+    .sidebar-wrapper::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .search-box .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .search-box input {
+        padding-left: 30px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    
+    .search-box input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .search-box input:focus {
+        background-color: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: none;
+    }
+    
+    .tree-item-header:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+    
+    .tree-child-item:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+    
+    .active-object,
+    .active-object .tree-item-header {
+        background-color: rgba(13, 110, 253, 0.2) !important;
+        border-radius: 4px;
+    }
+    
+    .active-estimate {
+        background-color: rgba(13, 110, 253, 0.3) !important;
+        border-radius: 4px;
+    }
+    
+    .parent-of-active .tree-item-header {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+        border-radius: 4px;
+    }
+    
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Фиксируем ширину заголовка в любом состоянии */
+    .sidebar-header .logo h5 {
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Единая высота для всех элементов */
+    .tree-item-header,
+    .tree-child-item {
+        box-sizing: border-box;
+    }
+</style>
+
+@code {
+    private bool isLoading = true;
+    private List<ConstructionObject>? objects;
+    private List<ConstructionObject>? filteredObjects;
+    private HashSet<int> expandedObjects = new();
+    private string searchTerm = string.Empty;
+    private bool sortAscending = true;
+    private const string StorageKey = "expandedObjects";
+    
+    private int? activeObjectId;
+    private int? activeEstimateId;
+    private int? lastClickedObjectId;
+
+    protected override void OnInitialized()
+    {
+        // Подписываемся на события
+        Navigation.LocationChanged += OnLocationChanged;
+        NotificationService.OnDataChanged += HandleDataChanged;
+        DataSyncService.OnEstimateChanged += HandleEstimateChanged;
+        DataSyncService.OnObjectChanged += HandleObjectChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExpandedState();
+        await LoadData();
+        DetermineActiveItems();
+    }
+
+    protected override void OnParametersSet()
+    {
+        DetermineActiveItems();
+        StateHasChanged();
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        DetermineActiveItems();
+        StateHasChanged();
+    }
+
+    private async void HandleDataChanged()
+    {
+        Console.WriteLine("🔄 NavMenu: получено уведомление об изменении данных");
+        await InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
+    }
+
+    private async Task HandleEstimateChanged(int id)
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
+    }
+
+    private async Task HandleObjectChanged(int id)
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
+    }
+
+    private void DetermineActiveItems()
+    {
+        var uri = Navigation.Uri.ToLower();
+        
+        var oldActiveObjectId = activeObjectId;
+        var oldActiveEstimateId = activeEstimateId;
+        
+        activeObjectId = null;
+        activeEstimateId = null;
+        
+        Console.WriteLine($"🔍 Определение активного элемента для URI: {uri}");
+        
+        // Проверяем страницу создания новой сметы
+        if (uri.Contains("/estimate/new/"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(uri, @"/estimate/new/(\d+)");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var objId))
+            {
+                Console.WriteLine($"📌 Страница создания сметы для объекта ID: {objId}");
+                activeObjectId = objId;
+                
+                if (!expandedObjects.Contains(activeObjectId.Value))
+                {
+                    expandedObjects.Add(activeObjectId.Value);
+                    _ = SaveExpandedState();
+                }
+            }
+        }
+        // Проверяем страницу просмотра сметы
+        else if (uri.Contains("/estimate/") && !uri.Contains("/new/") && !uri.Contains("/edit"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(uri, @"/estimate/(\d+)");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var estId))
+            {
+                Console.WriteLine($"📌 Страница просмотра сметы ID: {estId}");
+                activeEstimateId = estId;
+                
+                var estimate = objects?.SelectMany(o => o.Estimates ?? new List<Estimate>())
+                                      .FirstOrDefault(e => e.Id == estId);
+                if (estimate != null)
+                {
+                    activeObjectId = estimate.ConstructionObjectId;
+                    Console.WriteLine($"📌 Объект сметы ID: {activeObjectId}");
+                    
+                    if (!expandedObjects.Contains(activeObjectId.Value))
+                    {
+                        expandedObjects.Add(activeObjectId.Value);
+                        _ = SaveExpandedState();
+                    }
+                }
+            }
+        }
+        // Проверяем страницу объекта
+        else if (uri.Contains("/object/") && !uri.Contains("/edit") && !uri.Contains("/new"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(uri, @"/object/(\d+)");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var objId))
+            {
+                Console.WriteLine($"📌 Страница объекта ID: {objId}");
+                activeObjectId = objId;
+            }
+        }
+        
+        if (oldActiveObjectId != activeObjectId || oldActiveEstimateId != activeEstimateId)
+        {
+            Console.WriteLine($"🔄 Активный элемент изменился: Object={activeObjectId}, Estimate={activeEstimateId}");
+            StateHasChanged();
+        }
+    }
+
+    private bool IsObjectActive(int objectId) => activeObjectId == objectId;
+    
+    private bool IsEstimateActive(int estimateId) => activeEstimateId == estimateId;
+
+    private bool HasActiveEstimate(int objectId)
+    {
+        return activeEstimateId != null && 
+               objects?.FirstOrDefault(o => o.Id == objectId)?.Estimates?.Any(e => e.Id == activeEstimateId) == true;
+    }
+
+    private async Task LoadExpandedState()
+    {
+        try
+        {
+            var saved = await JSRuntime.InvokeAsync<string>("localStorage.getItem", StorageKey);
+            if (!string.IsNullOrEmpty(saved))
+            {
+                var ids = System.Text.Json.JsonSerializer.Deserialize<List<int>>(saved);
+                if (ids != null)
+                {
+                    expandedObjects = new HashSet<int>(ids);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки состояния: {ex.Message}");
+        }
+    }
+
+    private async Task SaveExpandedState()
+    {
+        try
+        {
+            var ids = expandedObjects.ToList();
+            var json = System.Text.Json.JsonSerializer.Serialize(ids);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка сохранения состояния: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        NotificationService.OnDataChanged -= HandleDataChanged;
+        DataSyncService.OnEstimateChanged -= HandleEstimateChanged;
+        DataSyncService.OnObjectChanged -= HandleObjectChanged;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            
+            objects = await Http.GetFromJsonAsync<List<ConstructionObject>>("http://localhost:5050/api/ConstructionObjects");
+            
+            var allEstimates = await Http.GetFromJsonAsync<List<Estimate>>("http://localhost:5050/api/Estimates");
+            
+            if (objects != null && allEstimates != null)
+            {
+                foreach (var obj in objects)
+                {
+                    obj.Estimates = allEstimates
+                        .Where(e => e.ConstructionObjectId == obj.Id)
+                        .ToList();
+                }
+            }
+            
+            // Применяем фильтрацию после загрузки
+            FilterObjects();
+            DetermineActiveItems();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private int GetEstimateCount(int objectId)
+    {
+        var obj = objects?.FirstOrDefault(o => o.Id == objectId);
+        return obj?.Estimates?.Count ?? 0;
+    }
+
+    private async void ToggleObject(int objectId)
+    {
+        if (expandedObjects.Contains(objectId))
+        {
+            expandedObjects.Remove(objectId);
+        }
+        else
+        {
+            expandedObjects.Add(objectId);
+        }
+        await SaveExpandedState();
+        StateHasChanged();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        FilterObjects();
+    }
+
+    private void FilterObjects()
+    {
+        if (objects == null)
+        {
+            filteredObjects = null;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredObjects = objects.ToList();
+        }
+        else
+        {
+            filteredObjects = objects
+                .Where(obj => 
+                    obj.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (obj.Estimates != null && obj.Estimates.Any(est => 
+                        est.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+                )
+                .ToList();
+        }
+
+        // Применяем сортировку
+        if (sortAscending)
+        {
+            filteredObjects = filteredObjects.OrderBy(obj => obj.Name).ToList();
+        }
+        else
+        {
+            filteredObjects = filteredObjects.OrderByDescending(obj => obj.Name).ToList();
+        }
+
+        StateHasChanged();
+    }
+
+    private void SortObjects()
+    {
+        if (filteredObjects != null)
+        {
+            sortAscending = !sortAscending;
+            
+            if (sortAscending)
+            {
+                filteredObjects = filteredObjects.OrderBy(obj => obj.Name).ToList();
+            }
+            else
+            {
+                filteredObjects = filteredObjects.OrderByDescending(obj => obj.Name).ToList();
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void GoToNewObject()
+    {
+        Navigation.NavigateTo("/object/new", true);
+    }
+
+    private void GoToObject(int objectId)
+    {
+        // Сохраняем последний кликнутый объект
+        lastClickedObjectId = objectId;
+        
+        if (!expandedObjects.Contains(objectId))
+        {
+            expandedObjects.Add(objectId);
+            _ = SaveExpandedState();
+        }
+        
+        // Обновляем активный объект вручную
+        activeObjectId = objectId;
+        activeEstimateId = null;
+        
+        // Переходим на страницу объекта
+        Navigation.NavigateTo($"/object/{objectId}");
+        
+        // Принудительно обновляем UI
+        StateHasChanged();
+    }
+
+    private void GoToEstimate(int estimateId, int objectId)
+    {
+        lastClickedObjectId = objectId;
+        
+        if (!expandedObjects.Contains(objectId))
+        {
+            expandedObjects.Add(objectId);
+            _ = SaveExpandedState();
+        }
+        
+        // Обновляем активные элементы вручную
+        activeObjectId = objectId;
+        activeEstimateId = estimateId;
+        
+        Navigation.NavigateTo($"/estimate/{estimateId}");
+        StateHasChanged();
+    }
+
+    private void GoToNewEstimate(int objectId)
+    {
+        lastClickedObjectId = objectId;
+        
+        if (!expandedObjects.Contains(objectId))
+        {
+            expandedObjects.Add(objectId);
+            _ = SaveExpandedState();
+        }
+        Navigation.NavigateTo($"/estimate/new/{objectId}", true);
+    }
+}

@@ -7,15 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     
-    <!-- FastReport пакеты -->
-    <PackageReference Include="FastReport.OpenSource" Version="2026.1.2" />
-    <PackageReference Include="FastReport.OpenSource.Export.PdfSimple" Version="2026.1.2" />
-    <PackageReference Include="FastReport.Data.Json" Version="2026.1.2" />
-    <PackageReference Include="FastReport.Data.MsSql" Version="2026.1.2" />
+    <!-- НОВЫЕ ПАКЕТЫ -->
+    <PackageReference Include="QuestPDF" Version="2026.2.4" />
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
   </ItemGroup>
 
   <ItemGroup>

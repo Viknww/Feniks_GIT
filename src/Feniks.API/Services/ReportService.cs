@@ -11,10 +11,12 @@ namespace Feniks.API.Services;
 public class ReportService
 {
     private readonly FeniksDbContext _context;
+    private readonly IWebHostEnvironment _env;
 
-    public ReportService(FeniksDbContext context)
+    public ReportService(FeniksDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env;
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
@@ -27,27 +29,102 @@ public class ReportService
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(1.5f, Unit.Centimetre);
-                page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(10));
+                page.MarginLeft(1.8f, Unit.Centimetre);
+                page.MarginRight(1.2f, Unit.Centimetre);
+                page.MarginTop(1.5f, Unit.Centimetre);
+                page.MarginBottom(1.5f, Unit.Centimetre);
+                page.DefaultTextStyle(x => x.FontFamily("DejaVu Sans Condensed").FontSize(8));
                 
                 page.Content().Column(col =>
                 {
-                    // Заголовок
-                    col.Item().Text(data.Estimate.Name).FontSize(16).Bold();
-                    col.Item().Text($"Объект: {data.Object?.Name ?? ""}");
-                    col.Item().Text($"Дата: {data.Estimate.CreatedAt:dd.MM.yyyy}");
-                    col.Item().PaddingBottom(10);
+                    // ==================== ШАПКА ====================
                     
-                    // Финансовые показатели (для заказчика)
-                    col.Item().Text($"Работа: {data.Totals.WorkTotalCustomer:N0} руб.");
-                    col.Item().Text($"Материалы: {data.Totals.MaterialTotalCustomer:N0} руб.");
-                    col.Item().Text($"Механизмы: {data.Totals.MachineryTotalCustomer:N0} руб.");
-                    col.Item().Text($"Доставка: {data.Totals.DeliveryTotalCustomer:N0} руб.");
-                    col.Item().PaddingBottom(5);
-                    col.Item().Text($"Итого по смете: {data.Estimate.CustomerPrice:N0} руб.").Bold();
-                    col.Item().PaddingBottom(10);
+                    // Строка "ПРИЛОЖЕНИЕ №    К ДОГОВОРУ №    ОТ"
+                    col.Item().Row(row =>
+                    {
+                        row.RelativeItem().Text("ПРИЛОЖЕНИЕ №").FontSize(7);
+                        row.RelativeItem().AlignLeft().Text("К ДОГОВОРУ №").FontSize(7);
+                        row.RelativeItem().AlignCenter().Text("ОТ").FontSize(7);
+                    });
+                    col.Item().PaddingTop(5);
                     
-                    // Таблица
+                    // Отсекающая линия
+                    col.Item().LineHorizontal(0.5f);                   
+                                      
+                    col.Item().PaddingTop(5);
+                    
+                    // Строка с логотипом слева, датой по центру, финансами справа
+                    col.Item().Row(row =>
+                    {
+                        // Левая часть - логотип и текст под ним
+                        row.ConstantItem(200).Column(leftCol =>
+                        {
+                            // Логотип
+                            var logoBytes = GetLogoPath();
+                            if (logoBytes != null)
+                            {
+                                leftCol.Item().Width(80).Image(logoBytes).FitArea();
+                            }
+                            
+                            leftCol.Item().PaddingTop(10);
+                            
+                            // Название сметы
+                            leftCol.Item().Text(data.Estimate.Name).FontSize(11).Bold();
+                            
+                            leftCol.Item().PaddingTop(3);
+                            
+                            // Объект
+                            leftCol.Item().Text($"Объект: {data.Object?.Name ?? ""}").FontSize(8);
+                        });
+                        
+                        // Центральная часть - дата
+                        row.RelativeItem().AlignLeft().Text(data.Estimate.CreatedAt.ToString("dd MMMM yyyy")).FontSize(7);
+                        
+                        // Правая часть - финансовые показатели (прижаты вправо) с символом рубля
+                        row.ConstantItem(240).AlignRight().Column(financeCol =>
+                        {
+                            financeCol.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text("Работа:").FontSize(8);
+                                r.RelativeItem().AlignRight().Text($"{data.Totals.WorkTotalCustomer:N0} руб.").FontSize(8);
+                            });
+                            financeCol.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text("Материалы:").FontSize(8);
+                                r.RelativeItem().AlignRight().Text($"{data.Totals.MaterialTotalCustomer:N0} руб.").FontSize(8);
+                            });
+                            financeCol.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text("Механизмы:").FontSize(8);
+                                r.RelativeItem().AlignRight().Text($"{data.Totals.MachineryTotalCustomer:N0} руб.").FontSize(8);
+                            });
+                            financeCol.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text("Доставка:").FontSize(8);
+                                r.RelativeItem().AlignRight().Text($"{data.Totals.DeliveryTotalCustomer:N0} руб.").FontSize(8);
+                            });
+                            financeCol.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text("Наценки, налоги, скидки:").FontSize(8);
+                                r.RelativeItem().AlignRight().Text("0 руб.").FontSize(8);
+                            });
+                            financeCol.Item().PaddingTop(2).Row(r =>
+                            {
+                                r.RelativeItem().Text("Итого по смете:").FontSize(8).Bold();
+                                r.RelativeItem().AlignRight().Text($"{data.Estimate.CustomerPrice:N0} руб.").FontSize(8).Bold();
+                            });
+                        });
+                    });
+                    
+                    col.Item().PaddingTop(5);
+                    
+                    // Отсекающая линия
+                    col.Item().LineHorizontal(0.5f);
+                    
+                    col.Item().PaddingTop(10);
+                    
+                    // ==================== ТАБЛИЦА ПОЗИЦИЙ ====================
+                    
                     col.Item().Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
@@ -61,31 +138,37 @@ public class ReportService
                         });
                         
                         // Заголовки
-                        table.Cell().Text("№").Bold().AlignCenter();
-                        table.Cell().Text("Наименование").Bold();
-                        table.Cell().Text("Ед. изм.").Bold().AlignCenter();
-                        table.Cell().Text("Кол-во").Bold().AlignRight();
-                        table.Cell().Text("Цена, руб.").Bold().AlignRight();
-                        table.Cell().Text("Сумма, руб.").Bold().AlignRight();
+                        table.Header(header =>
+                        {
+                            header.Cell().Text("№").Bold().AlignCenter();
+                            header.Cell().Text("Наименование").Bold();
+                            header.Cell().Text("Ед. изм.").Bold().AlignCenter();
+                            header.Cell().Text("Кол-во").Bold().AlignRight();
+                            header.Cell().Text("Цена, руб.").Bold().AlignRight();
+                            header.Cell().Text("Сумма, руб.").Bold().AlignRight();
+                        });
                         
                         int stageNumber = 1;
                         
                         foreach (var stage in data.Stages.OrderBy(s => s.OrderIndex))
                         {
-                            // Заголовок этапа с итогом (для заказчика)
-                            var stageTotal = data.Items.Where(i => i.StageId == stage.Id).Sum(i => i.CustomerPrice * i.Quantity);
+                            // Заголовок этапа
                             table.Cell().ColumnSpan(4).Text($"{stageNumber}. {stage.Name}").Bold();
+                            
+                            // Итог этапа
+                            var stageTotal = data.Items.Where(i => i.StageId == stage.Id).Sum(i => i.CustomerPrice * i.Quantity);
                             table.Cell().ColumnSpan(2).AlignRight().Text($"{stageTotal:N0} руб.").Bold();
                             
                             var stageGroups = data.Groups.Where(g => g.StageId == stage.Id).OrderBy(g => g.OrderIndex).ToList();
                             int groupNumber = 1;
                             
-                            // Группы
                             foreach (var group in stageGroups)
                             {
-                                // Заголовок группы с итогом (для заказчика)
-                                var groupTotal = data.Items.Where(i => i.GroupId == group.Id).Sum(i => i.CustomerPrice * i.Quantity);
+                                // Заголовок группы
                                 table.Cell().ColumnSpan(4).Text($"  {stageNumber}.{groupNumber}. {group.Name}").Bold();
+                                
+                                // Итог группы
+                                var groupTotal = data.Items.Where(i => i.GroupId == group.Id).Sum(i => i.CustomerPrice * i.Quantity);
                                 table.Cell().ColumnSpan(2).AlignRight().Text($"{groupTotal:N0} руб.").Bold();
                                 
                                 var groupItems = data.Items.Where(i => i.GroupId == group.Id).OrderBy(i => i.OrderIndex).ToList();
@@ -109,8 +192,9 @@ public class ReportService
                                                            .ToList();
                             if (ungroupedItems.Any())
                             {
-                                var ungroupedTotal = ungroupedItems.Sum(i => i.CustomerPrice * i.Quantity);
                                 table.Cell().ColumnSpan(4).Text("  Позиции без группы").Bold();
+                                
+                                var ungroupedTotal = ungroupedItems.Sum(i => i.CustomerPrice * i.Quantity);
                                 table.Cell().ColumnSpan(2).AlignRight().Text($"{ungroupedTotal:N0} руб.").Bold();
                                 
                                 int itemNumber = 1;
@@ -129,14 +213,21 @@ public class ReportService
                             stageNumber++;
                         }
                         
+                        // Отсекающая линия перед итогом
+                        table.Cell().ColumnSpan(6).Element(cell =>
+                        {
+                            cell.BorderTop(0.5f);
+                        });
+                        
                         // Общий итог
                         table.Cell().ColumnSpan(4).AlignRight().Text($"ВСЕГО ПО СМЕТЕ:").Bold();
                         table.Cell().ColumnSpan(2).AlignRight().Text($"{data.Estimate.CustomerPrice:N0} руб.").Bold();
                     });
                     
-                    // Комментарий
-                    col.Item().PaddingTop(15).Text("Комментарий").FontSize(10).Bold();
-                    col.Item().PaddingTop(5).Text("Примечания:").FontSize(9).Bold();
+                    // ==================== КОММЕНТАРИЙ ====================
+                    
+                    col.Item().PaddingTop(15).Text("Комментарий").FontSize(8).Bold();
+                    col.Item().PaddingTop(5).Text("Примечания:").FontSize(8).Bold();
                     col.Item().PaddingTop(3).Text("1) в процессе производства работ объемы и состав работ может изменяться как в большую, так и в меньшую сторону, расчет будет производится по фактически выполненным объемам.").FontSize(8);
                     col.Item().PaddingTop(2).Text("2) работы и материалы не учтенные данным КП будут оформляться дополнительным соглашением.").FontSize(8);
                     col.Item().PaddingTop(2).Text("3) данное КП предусматривает оплату наличным расчетом.").FontSize(8);
@@ -146,6 +237,19 @@ public class ReportService
                     {
                         row.RelativeItem().Text("ПОДРЯДЧИК: _________________");
                         row.RelativeItem().Text("ЗАКАЗЧИК: _________________");
+                    });
+                });
+                
+                // ==================== НИЖНИЙ КОЛОНТИТУЛ ====================
+                page.Footer().Row(footerRow =>
+                {
+                    footerRow.RelativeItem().Text($"Дата печати: {DateTime.Now:dd.MM.yyyy HH:mm}").FontSize(7);
+                    footerRow.RelativeItem().AlignRight().Text(text =>
+                    {
+                        text.Span("Страница ").FontSize(7);
+                        text.CurrentPageNumber().FontSize(7);
+                        text.Span(" из ").FontSize(7);
+                        text.TotalPages().FontSize(7);
                     });
                 });
             });
@@ -163,32 +267,50 @@ public class ReportService
         
         int currentRow = 1;
         
+        worksheet.Cell(currentRow, 1).Value = "ПРИЛОЖЕНИЕ №";
+        worksheet.Cell(currentRow, 5).Value = "К ДОГОВОРУ №";
+        currentRow++;
+        
+        worksheet.Cell(currentRow, 6).Value = "ОТ";
+        worksheet.Cell(currentRow, 7).Value = data.Estimate.CreatedAt.ToString("dd MMMM yyyy");
+        currentRow++;
+        currentRow++;
+        
         worksheet.Cell(currentRow, 1).Value = data.Estimate.Name;
         worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
         currentRow++;
-        
         worksheet.Cell(currentRow, 1).Value = $"Объект: {data.Object?.Name ?? ""}";
         currentRow++;
         currentRow++;
         
         worksheet.Cell(currentRow, 5).Value = "Работа:";
         worksheet.Cell(currentRow, 6).Value = (double)data.Totals.WorkTotalCustomer;
+        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
         currentRow++;
         worksheet.Cell(currentRow, 5).Value = "Материалы:";
         worksheet.Cell(currentRow, 6).Value = (double)data.Totals.MaterialTotalCustomer;
+        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
         currentRow++;
         worksheet.Cell(currentRow, 5).Value = "Механизмы:";
         worksheet.Cell(currentRow, 6).Value = (double)data.Totals.MachineryTotalCustomer;
+        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
         currentRow++;
         worksheet.Cell(currentRow, 5).Value = "Доставка:";
         worksheet.Cell(currentRow, 6).Value = (double)data.Totals.DeliveryTotalCustomer;
+        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+        currentRow++;
+        worksheet.Cell(currentRow, 5).Value = "Наценки, налоги, скидки:";
+        worksheet.Cell(currentRow, 6).Value = 0;
+        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
         currentRow++;
         worksheet.Cell(currentRow, 5).Value = "Итого по смете:";
         worksheet.Cell(currentRow, 6).Value = (double)data.Estimate.CustomerPrice;
         worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
+        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
         currentRow++;
         currentRow++;
         
+        // Заголовки таблицы
         worksheet.Cell(currentRow, 1).Value = "№";
         worksheet.Cell(currentRow, 2).Value = "Наименование";
         worksheet.Cell(currentRow, 3).Value = "Ед. изм.";
@@ -213,13 +335,13 @@ public class ReportService
             worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightCyan;
             worksheet.Cell(currentRow, 6).Value = (double)stageTotal;
             worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
+            worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
             worksheet.Range(currentRow, 1, currentRow, 2).Merge();
             currentRow++;
             
             var stageGroups = data.Groups.Where(g => g.StageId == stage.Id).OrderBy(g => g.OrderIndex).ToList();
             int groupNumber = 1;
             
-            // Группы
             foreach (var group in stageGroups)
             {
                 var groupTotal = data.Items.Where(i => i.GroupId == group.Id).Sum(i => i.CustomerPrice * i.Quantity);
@@ -228,6 +350,7 @@ public class ReportService
                 worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightYellow;
                 worksheet.Cell(currentRow, 6).Value = (double)groupTotal;
                 worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
+                worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
                 worksheet.Range(currentRow, 1, currentRow, 2).Merge();
                 currentRow++;
                 
@@ -240,14 +363,15 @@ public class ReportService
                     worksheet.Cell(currentRow, 3).Value = item.Unit;
                     worksheet.Cell(currentRow, 4).Value = (double)item.Quantity;
                     worksheet.Cell(currentRow, 5).Value = (double)item.CustomerPrice;
+                    worksheet.Cell(currentRow, 5).Style.NumberFormat.Format = "#,##0";
                     worksheet.Cell(currentRow, 6).Value = (double)(item.CustomerPrice * item.Quantity);
+                    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0";
                     currentRow++;
                     itemNumber++;
                 }
                 groupNumber++;
             }
             
-            // Позиции без группы
             var ungroupedItems = data.Items.Where(i => i.StageId == stage.Id && !i.GroupId.HasValue)
                                            .OrderBy(i => i.OrderIndex)
                                            .ToList();
@@ -259,6 +383,7 @@ public class ReportService
                 worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightGray;
                 worksheet.Cell(currentRow, 6).Value = (double)ungroupedTotal;
                 worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
+                worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
                 worksheet.Range(currentRow, 1, currentRow, 2).Merge();
                 currentRow++;
                 
@@ -270,7 +395,9 @@ public class ReportService
                     worksheet.Cell(currentRow, 3).Value = item.Unit;
                     worksheet.Cell(currentRow, 4).Value = (double)item.Quantity;
                     worksheet.Cell(currentRow, 5).Value = (double)item.CustomerPrice;
+                    worksheet.Cell(currentRow, 5).Style.NumberFormat.Format = "#,##0";
                     worksheet.Cell(currentRow, 6).Value = (double)(item.CustomerPrice * item.Quantity);
+                    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0";
                     currentRow++;
                     itemNumber++;
                 }
@@ -279,13 +406,35 @@ public class ReportService
             stageNumber++;
         }
         
+        // Итоговая строка с линией
+        currentRow++;
+        worksheet.Cell(currentRow, 1).Value = "";
+        worksheet.Range(currentRow, 1, currentRow, 6).Style.Border.TopBorder = ClosedXML.Excel.XLBorderStyleValues.Thin;
+        currentRow++;
+        
+        worksheet.Cell(currentRow, 5).Value = "ВСЕГО ПО СМЕТЕ:";
+        worksheet.Cell(currentRow, 5).Style.Font.Bold = true;
+        worksheet.Cell(currentRow, 6).Value = (double)data.Estimate.CustomerPrice;
+        worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
+        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+        
         worksheet.Columns().AdjustToContents();
         
         using var ms = new MemoryStream();
         workbook.SaveAs(ms);
         return ms.ToArray();
     }
-
+    
+    private byte[] GetLogoPath()
+    {
+        var logoPath = System.IO.Path.Combine(_env.ContentRootPath, "Reports", "Logo_Nadezda.png");
+        if (System.IO.File.Exists(logoPath))
+        {
+            return System.IO.File.ReadAllBytes(logoPath);
+        }
+        return null;
+    }
+    
     private async Task<EstimateData> LoadEstimateData(int estimateId)
     {
         var estimate = await _context.Estimates
@@ -331,7 +480,7 @@ public class ReportService
             }
         };
     }
-
+    
     private class EstimateData
     {
         public Estimate Estimate { get; set; } = null!;
@@ -341,7 +490,7 @@ public class ReportService
         public List<EstimateItem> Items { get; set; } = new();
         public TotalsData Totals { get; set; } = new();
     }
-
+    
     private class TotalsData
     {
         public decimal WorkTotalCustomer { get; set; }

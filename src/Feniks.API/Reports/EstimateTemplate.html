@@ -7,118 +7,114 @@
         body {
             font-family: 'DejaVu Sans Condensed', 'Arial', sans-serif;
             margin: 2cm;
-            padding: 0;
             font-size: 10pt;
-            line-height: 1.2;
+            line-height: 1.3;
         }
         
-        /* Заголовочная часть */
         .header {
             margin-bottom: 20px;
-            position: relative;
-            min-height: 80px;
         }
         
-        .logo {
-            float: left;
-            width: 110px;
-            height: auto;
-            margin-right: 15px;
-        }
-        
-        .logo img {
-            max-width: 100%;
-            height: auto;
-        }
-        
-        .header-right {
-            float: right;
-            width: 280px;
-            margin-top: 10px;
-        }
-        
-        .header-line {
-            clear: both;
-            border-top: 1px solid #000;
-            margin: 10px 0;
-        }
-        
-        /* Финансовые показатели */
-        .financial-panel {
-            border: 1px solid #ddd;
-            margin: 15px 0;
-            background: #fff;
-        }
-        
-        .financial-row {
+        .header-top {
             display: flex;
             justify-content: space-between;
-            padding: 4px 8px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .financial-row:last-child {
-            border-bottom: none;
-        }
-        
-        .financial-label {
-            font-weight: normal;
-        }
-        
-        .financial-value {
-            font-weight: bold;
-            text-align: right;
-        }
-        
-        .financial-total {
-            background-color: #ffe4e1; /* MistyRose */
-        }
-        
-        /* Заголовок сметы */
-        .estimate-title {
-            background-color: #ffe4e1;
-            padding: 6px 12px;
-            font-weight: bold;
-            font-size: 12pt;
-            margin: 10px 0;
-        }
-        
-        /* Таблица */
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
             font-size: 8pt;
         }
         
-        .items-table th {
-            background-color: #d3d3d3; /* Gainsboro */
-            border: 1px solid #ccc;
-            padding: 6px 4px;
-            text-align: center;
+        .logo-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        
+        .logo {
+            width: 80px;
+        }
+        
+        .company-name {
+            font-size: 12pt;
             font-weight: bold;
+        }
+        
+        .estimate-name {
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .object-name {
+            font-size: 10pt;
+            margin-bottom: 15px;
+        }
+        
+        .finance-table {
+            float: right;
+            width: 280px;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        
+        .finance-table td {
+            padding: 2px 5px;
+        }
+        
+        .finance-table td:first-child {
+            text-align: left;
+        }
+        
+        .finance-table td:last-child {
+            text-align: right;
+        }
+        
+        .finance-table .total-row {
+            font-weight: bold;
+            border-top: 1px solid #ccc;
+            margin-top: 5px;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .items-table th, .items-table td {
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+        
+        .items-table th {
+            background-color: #e0e0e0;
+            font-weight: bold;
+            text-align: center;
         }
         
         .items-table td {
-            border: 1px solid #ccc;
-            padding: 4px;
             vertical-align: top;
         }
         
-        .items-table .stage-row td {
-            background-color: #e0ffff; /* LightCyan */
+        .stage-row td {
+            background-color: #e0ffff;
             font-weight: bold;
-            padding: 4px 8px;
         }
         
-        .items-table .group-row td {
-            background-color: #ffffe0; /* LightYellow */
+        .group-row td {
+            background-color: #ffffe0;
             font-weight: bold;
-            padding: 4px 8px;
         }
         
-        .items-table .item-row td {
-            background-color: #fff;
+        .ungrouped-header td {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .total-row {
+            background-color: #ffe4e1;
+            font-weight: bold;
         }
         
         .text-right {
@@ -129,132 +125,72 @@
             text-align: center;
         }
         
-        /* Итоговая строка */
-        .total-row {
-            background-color: #ffe4e1;
-            font-weight: bold;
-        }
-        
-        /* Нижний колонтитул */
-        .footer {
+        .comments {
             margin-top: 30px;
-            font-size: 8pt;
-            color: #666;
-            border-top: 1px solid #ccc;
-            padding-top: 10px;
         }
         
         .signatures {
+            margin-top: 30px;
             display: flex;
             justify-content: space-between;
-            margin-top: 20px;
         }
         
-        .page-number {
-            text-align: right;
+        .footer {
+            margin-top: 30px;
+            font-size: 7pt;
+            display: flex;
+            justify-content: space-between;
         }
         
-        .print-date {
-            float: left;
-        }
-        
-        /* Стили для полей замены */
-        .field {
-            font-weight: bold;
-        }
-        
-        .clearfix::after {
-            content: "";
-            clear: both;
-            display: table;
+        hr {
+            margin: 15px 0;
         }
     </style>
 </head>
 <body>
 
-<!-- Верхняя часть: приложение, договор, дата -->
 <div class="header">
-    <div class="logo">
-        <img src="Logo_Nadezda.png" alt="Логотип" style="max-width: 100px;">
+    <div class="header-top">
+        <span>ПРИЛОЖЕНИЕ №</span>
+        <span>К ДОГОВОРУ №</span>
+        <span>ОТ</span>
     </div>
-    <div style="margin-left: 120px;">
-        <span style="font-size: 8pt;">ПРИЛОЖЕНИЕ № ___</span>
-        <span style="font-size: 8pt; margin-left: 20px;">К ДОГОВОРУ № ___</span>
-        <span style="font-size: 8pt; float: right;">ОТ <span class="field">[Estimate.CreatedAt]</span></span>
+    <div class="header-top" style="justify-content: flex-end;">
+        <span>[Estimate.CreatedAt]</span>
     </div>
+    
+    <div class="logo-row">
+        <div class="logo">
+            <img src="[LOGO]" style="max-width: 80px;">
+        </div>
+        <div class="company-name">НАДЕЖДА</div>
+    </div>
+    
+    <div class="estimate-name">[Estimate.Name]</div>
+    <div class="object-name">Объект: [Object.Name]</div>
+    
+    <table class="finance-table">
+        <tr><td>Работа:</td><td>[Totals.WorkTotalCustomer]</td></tr>
+        <tr><td>Материалы:</td><td>[Totals.MaterialTotalCustomer]</td></tr>
+        <tr><td>Механизмы:</td><td>[Totals.MachineryTotalCustomer]</td></tr>
+        <tr><td>Доставка:</td><td>[Totals.DeliveryTotalCustomer]</td></tr>
+        <tr><td>Наценки, налоги, скидки:</td><td>0</td></tr>
+        <tr class="total-row"><td>Итого по смете:</td><td>[Estimate.CustomerPrice]</td></tr>
+    </table>
+    <div class="clearfix"></div>
 </div>
 
-<div class="header-line"></div>
+<hr>
 
-<!-- Строка с объектом -->
-<div style="margin: 5px 0;">
-    <strong>Объект:</strong> <span class="field">[Object.Name]</span>
-</div>
+<!-- Таблица будет вставлена сюда -->
+[ITEMS]
 
-<!-- Блок финансовых показателей (правая колонка) -->
-<div class="financial-panel" style="float: right; width: 280px; margin-left: 15px;">
-    <div class="financial-row">
-        <span class="financial-label">Работа:</span>
-        <span class="financial-value"><span class="field">[Totals.WorkTotalCustomer]</span> ₽</span>
-    </div>
-    <div class="financial-row">
-        <span class="financial-label">Материалы:</span>
-        <span class="financial-value"><span class="field">[Totals.MaterialTotalCustomer]</span> ₽</span>
-    </div>
-    <div class="financial-row">
-        <span class="financial-label">Механизмы:</span>
-        <span class="financial-value"><span class="field">[Totals.MachineryTotalCustomer]</span> ₽</span>
-    </div>
-    <div class="financial-row">
-        <span class="financial-label">Доставка:</span>
-        <span class="financial-value"><span class="field">[Totals.DeliveryTotalCustomer]</span> ₽</span>
-    </div>
-    <div class="financial-row">
-        <span class="financial-label">Наценки, налоги, скидки:</span>
-        <span class="financial-value">0 ₽</span>
-    </div>
-    <div class="financial-row financial-total">
-        <span class="financial-label"><strong>Итого по смете:</strong></span>
-        <span class="financial-value"><strong><span class="field">[Estimate.CustomerPrice]</span> ₽</strong></span>
-    </div>
-</div>
-
-<!-- Название сметы -->
-<div class="estimate-title">
-    <span class="field">[Estimate.Name]</span>
-</div>
-
-<div class="clearfix"></div>
-
-<!-- Таблица позиций -->
-<table class="items-table">
-    <thead>
-        <tr>
-            <th style="width: 8%;">№</th>
-            <th style="width: 45%;">Наименование</th>
-            <th style="width: 10%;">Ед. изм.</th>
-            <th style="width: 10%;">Кол-во</th>
-            <th style="width: 12%;">Цена</th>
-            <th style="width: 15%;">Стоимость</th>
-        </tr>
-    </thead>
-    <tbody id="items-table-body">
-        <!-- Здесь будет динамическое содержимое -->
-        [ITEMS]
-    </tbody>
-</table>
-
-<!-- Итоговая строка -->
-<div style="text-align: right; margin-top: 10px;">
-    <div style="display: inline-block; background-color: #ffe4e1; padding: 6px 12px;">
-        <strong>ВСЕГО ПО СМЕТЕ: <span class="field">[Estimate.CustomerPrice]</span> ₽</strong>
-    </div>
-</div>
-
-<!-- Нижний колонтитул -->
-<div class="footer">
-    <div class="print-date">Дата печати: <span class="field">[Date]</span></div>
-    <div class="page-number">Страница <span class="field">[Page]</span> из <span class="field">[TotalPages]</span></div>
+<div class="comments">
+    <strong>Комментарий</strong><br>
+    <strong>Примечания:</strong><br>
+    1) в процессе производства работ объемы и состав работ может изменяться как в большую, так и в меньшую сторону, расчет будет производится по фактически выполненным объемам.<br>
+    2) работы и материалы не учтенные данным КП будут оформляться дополнительным соглашением.<br>
+    3) данное КП предусматривает оплату наличным расчетом.
 </div>
 
 <div class="signatures">
@@ -262,8 +198,9 @@
     <div>ЗАКАЗЧИК: _________________</div>
 </div>
 
-<div style="font-size: 7pt; text-align: center; margin-top: 20px; color: #999;">
-    Создано в программе "Феникс"
+<div class="footer">
+    <div>Дата печати: [Date]</div>
+    <div>Страница [Page] из [TotalPages]</div>
 </div>
 
 </body>

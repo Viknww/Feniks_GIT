@@ -66,10 +66,11 @@ public class ReportService
                                 leftCol.Item().Width(80).Image(logoBytes).FitArea();
                             }
                             
-                            leftCol.Item().PaddingTop(10);
+                            leftCol.Item().PaddingTop(5);
                             
                             // Название сметы
-                            leftCol.Item().Text(data.Estimate.Name).FontSize(11).Bold();
+                           // leftCol.Item().Text(data.Estimate.Name).FontSize(11).Bold();
+                           leftCol.Item().Text($"{data.Estimate.Name}  {data.Estimate.CustomerPrice:N0} ₽").FontSize(11).Bold();
                             
                             leftCol.Item().PaddingTop(3);
                             
@@ -254,173 +255,203 @@ col.Item().Table(table =>
     }
 
     public async Task<byte[]> GenerateEstimateExcel(int estimateId)
+{
+    var data = await LoadEstimateData(estimateId);
+    
+    using var workbook = new ClosedXML.Excel.XLWorkbook();
+    var worksheet = workbook.Worksheets.Add("Смета");
+    
+    int currentRow = 1;
+    
+    // ==================== ШАПКА ====================
+    
+    // Строка "ПРИЛОЖЕНИЕ №    К ДОГОВОРУ №    ОТ"
+    worksheet.Cell(currentRow, 1).Value = "ПРИЛОЖЕНИЕ №";
+    worksheet.Cell(currentRow, 4).Value = "К ДОГОВОРУ №";
+    worksheet.Cell(currentRow, 6).Value = "ОТ";
+    currentRow++;
+    
+    // Дата
+    worksheet.Cell(currentRow, 6).Value = data.Estimate.CreatedAt.ToString("dd MMMM yyyy");
+    worksheet.Cell(currentRow, 6).Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Right;
+    currentRow++;
+    currentRow++;
+    
+    // Логотип и финансы в одной строке
+    worksheet.Cell(currentRow, 1).Value = "НАДЕЖДА";
+    worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
+    
+    // Финансовые показатели справа
+    worksheet.Cell(currentRow, 5).Value = "Работа:";
+    worksheet.Cell(currentRow, 6).Value = (double)data.Totals.WorkTotalCustomer;
+    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+    currentRow++;
+    
+    worksheet.Cell(currentRow, 5).Value = "Материалы:";
+    worksheet.Cell(currentRow, 6).Value = (double)data.Totals.MaterialTotalCustomer;
+    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+    currentRow++;
+    
+    worksheet.Cell(currentRow, 5).Value = "Механизмы:";
+    worksheet.Cell(currentRow, 6).Value = (double)data.Totals.MachineryTotalCustomer;
+    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+    currentRow++;
+    
+    worksheet.Cell(currentRow, 5).Value = "Доставка:";
+    worksheet.Cell(currentRow, 6).Value = (double)data.Totals.DeliveryTotalCustomer;
+    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+    currentRow++;
+    
+    worksheet.Cell(currentRow, 5).Value = "Наценки, налоги, скидки:";
+    worksheet.Cell(currentRow, 6).Value = 0;
+    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+    currentRow++;
+    
+    worksheet.Cell(currentRow, 5).Value = "Итого по смете:";
+    worksheet.Cell(currentRow, 6).Value = (double)data.Estimate.CustomerPrice;
+    worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
+    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+    currentRow++;
+    currentRow++;
+    
+    // Название сметы
+    worksheet.Cell(currentRow, 1).Value = data.Estimate.Name;
+    worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
+    currentRow++;
+    
+    // Объект
+    worksheet.Cell(currentRow, 1).Value = $"Объект: {data.Object?.Name ?? ""}";
+    currentRow++;
+    currentRow++;
+    
+    // Линия
+    worksheet.Range(currentRow, 1, currentRow, 6).Style.Border.TopBorder = ClosedXML.Excel.XLBorderStyleValues.Thin;
+    currentRow++;
+    
+    // ==================== ТАБЛИЦА ПОЗИЦИЙ ====================
+    
+    // Заголовки таблицы со светло-серым фоном
+    worksheet.Cell(currentRow, 1).Value = "№";
+    worksheet.Cell(currentRow, 2).Value = "Наименование";
+    worksheet.Cell(currentRow, 3).Value = "Ед. изм.";
+    worksheet.Cell(currentRow, 4).Value = "Кол-во";
+    worksheet.Cell(currentRow, 5).Value = "Цена, руб.";
+    worksheet.Cell(currentRow, 6).Value = "Сумма, руб.";
+    
+    for (int i = 1; i <= 6; i++)
     {
-        var data = await LoadEstimateData(estimateId);
+        worksheet.Cell(currentRow, i).Style.Font.Bold = true;
+        worksheet.Cell(currentRow, i).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#E9ECEF"); // Colors.Grey.Lighten2
+    }
+    currentRow++;
+    
+    int stageNumber = 1;
+    
+    foreach (var stage in data.Stages.OrderBy(s => s.OrderIndex))
+    {
+        var stageTotal = data.Items.Where(i => i.StageId == stage.Id).Sum(i => i.CustomerPrice * i.Quantity);
         
-        using var workbook = new ClosedXML.Excel.XLWorkbook();
-        var worksheet = workbook.Worksheets.Add("Смета");
-        
-        int currentRow = 1;
-        
-        worksheet.Cell(currentRow, 1).Value = "ПРИЛОЖЕНИЕ №";
-        worksheet.Cell(currentRow, 5).Value = "К ДОГОВОРУ №";
-        currentRow++;
-        
-        worksheet.Cell(currentRow, 6).Value = "ОТ";
-        worksheet.Cell(currentRow, 7).Value = data.Estimate.CreatedAt.ToString("dd MMMM yyyy");
-        currentRow++;
-        currentRow++;
-        
-        worksheet.Cell(currentRow, 1).Value = data.Estimate.Name;
-        worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
-        currentRow++;
-        worksheet.Cell(currentRow, 1).Value = $"Объект: {data.Object?.Name ?? ""}";
-        currentRow++;
-        currentRow++;
-        
-        worksheet.Cell(currentRow, 5).Value = "Работа:";
-        worksheet.Cell(currentRow, 6).Value = (double)data.Totals.WorkTotalCustomer;
-        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-        currentRow++;
-        worksheet.Cell(currentRow, 5).Value = "Материалы:";
-        worksheet.Cell(currentRow, 6).Value = (double)data.Totals.MaterialTotalCustomer;
-        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-        currentRow++;
-        worksheet.Cell(currentRow, 5).Value = "Механизмы:";
-        worksheet.Cell(currentRow, 6).Value = (double)data.Totals.MachineryTotalCustomer;
-        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-        currentRow++;
-        worksheet.Cell(currentRow, 5).Value = "Доставка:";
-        worksheet.Cell(currentRow, 6).Value = (double)data.Totals.DeliveryTotalCustomer;
-        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-        currentRow++;
-        worksheet.Cell(currentRow, 5).Value = "Наценки, налоги, скидки:";
-        worksheet.Cell(currentRow, 6).Value = 0;
-        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-        currentRow++;
-        worksheet.Cell(currentRow, 5).Value = "Итого по смете:";
-        worksheet.Cell(currentRow, 6).Value = (double)data.Estimate.CustomerPrice;
+        // Заголовок этапа с нежно-голубым фоном
+        worksheet.Cell(currentRow, 2).Value = $"{stageNumber}. {stage.Name}";
+        worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
+        worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#E3F2FD"); // Colors.Blue.Lighten4
+        worksheet.Cell(currentRow, 6).Value = (double)stageTotal;
         worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
         worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-        currentRow++;
+        worksheet.Range(currentRow, 1, currentRow, 6).Merge();
         currentRow++;
         
-        // Заголовки таблицы
-        worksheet.Cell(currentRow, 1).Value = "№";
-        worksheet.Cell(currentRow, 2).Value = "Наименование";
-        worksheet.Cell(currentRow, 3).Value = "Ед. изм.";
-        worksheet.Cell(currentRow, 4).Value = "Кол-во";
-        worksheet.Cell(currentRow, 5).Value = "Цена, руб.";
-        worksheet.Cell(currentRow, 6).Value = "Сумма, руб.";
+        var stageGroups = data.Groups.Where(g => g.StageId == stage.Id).OrderBy(g => g.OrderIndex).ToList();
+        int groupNumber = 1;
         
-        for (int i = 1; i <= 6; i++)
+        foreach (var group in stageGroups)
         {
-            worksheet.Cell(currentRow, i).Style.Font.Bold = true;
-            worksheet.Cell(currentRow, i).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightGray;
-        }
-        currentRow++;
-        
-        int stageNumber = 1;
-        
-        foreach (var stage in data.Stages.OrderBy(s => s.OrderIndex))
-        {
-            var stageTotal = data.Items.Where(i => i.StageId == stage.Id).Sum(i => i.CustomerPrice * i.Quantity);
-            worksheet.Cell(currentRow, 2).Value = $"{stageNumber}. {stage.Name}";
+            var groupTotal = data.Items.Where(i => i.GroupId == group.Id).Sum(i => i.CustomerPrice * i.Quantity);
+            
+            // Заголовок группы с нежно-желтым фоном
+            worksheet.Cell(currentRow, 2).Value = $"  {stageNumber}.{groupNumber}. {group.Name}";
             worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
-            worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#FFE6E6"); // нежно-персиковый
-            worksheet.Cell(currentRow, 6).Value = (double)stageTotal;
+            worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#FFF9C4"); // Colors.Yellow.Lighten4
+            worksheet.Cell(currentRow, 6).Value = (double)groupTotal;
             worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
             worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-            worksheet.Range(currentRow, 1, currentRow, 2).Merge();
+            worksheet.Range(currentRow, 1, currentRow, 6).Merge();
             currentRow++;
             
-            var stageGroups = data.Groups.Where(g => g.StageId == stage.Id).OrderBy(g => g.OrderIndex).ToList();
-            int groupNumber = 1;
-            
-            foreach (var group in stageGroups)
+            var groupItems = data.Items.Where(i => i.GroupId == group.Id).OrderBy(i => i.OrderIndex).ToList();
+            int itemNumber = 1;
+            foreach (var item in groupItems)
             {
-                var groupTotal = data.Items.Where(i => i.GroupId == group.Id).Sum(i => i.CustomerPrice * i.Quantity);
-                worksheet.Cell(currentRow, 2).Value = $"  {stageNumber}.{groupNumber}. {group.Name}";
-                worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
-                worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#E6FFE6"); // нежно-зеленый
-                worksheet.Cell(currentRow, 6).Value = (double)groupTotal;
-                worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
-                worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-                worksheet.Range(currentRow, 1, currentRow, 2).Merge();
+                worksheet.Cell(currentRow, 1).Value = $"{stageNumber}.{groupNumber}.{itemNumber}";
+                worksheet.Cell(currentRow, 2).Value = item.Name;
+                worksheet.Cell(currentRow, 3).Value = item.Unit;
+                worksheet.Cell(currentRow, 4).Value = (double)item.Quantity;
+                worksheet.Cell(currentRow, 5).Value = (double)item.CustomerPrice;
+                worksheet.Cell(currentRow, 5).Style.NumberFormat.Format = "#,##0";
+                worksheet.Cell(currentRow, 6).Value = (double)(item.CustomerPrice * item.Quantity);
+                worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0";
                 currentRow++;
-                
-                var groupItems = data.Items.Where(i => i.GroupId == group.Id).OrderBy(i => i.OrderIndex).ToList();
-                int itemNumber = 1;
-                foreach (var item in groupItems)
-                {
-                    // Позиции без фона
-                    worksheet.Cell(currentRow, 1).Value = $"{stageNumber}.{groupNumber}.{itemNumber}";
-                    worksheet.Cell(currentRow, 2).Value = item.Name;
-                    worksheet.Cell(currentRow, 3).Value = item.Unit;
-                    worksheet.Cell(currentRow, 4).Value = (double)item.Quantity;
-                    worksheet.Cell(currentRow, 5).Value = (double)item.CustomerPrice;
-                    worksheet.Cell(currentRow, 5).Style.NumberFormat.Format = "#,##0";
-                    worksheet.Cell(currentRow, 6).Value = (double)(item.CustomerPrice * item.Quantity);
-                    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0";
-                    currentRow++;
-                    itemNumber++;
-                }
-                groupNumber++;
+                itemNumber++;
             }
-            
-            var ungroupedItems = data.Items.Where(i => i.StageId == stage.Id && !i.GroupId.HasValue)
-                                           .OrderBy(i => i.OrderIndex)
-                                           .ToList();
-            if (ungroupedItems.Any())
-            {
-                var ungroupedTotal = ungroupedItems.Sum(i => i.CustomerPrice * i.Quantity);
-                worksheet.Cell(currentRow, 2).Value = "  Позиции без группы";
-                worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
-                worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#F2F2F2"); // нежно-серый
-                worksheet.Cell(currentRow, 6).Value = (double)ungroupedTotal;
-                worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
-                worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-                worksheet.Range(currentRow, 1, currentRow, 2).Merge();
-                currentRow++;
-                
-                int itemNumber = 1;
-                foreach (var item in ungroupedItems)
-                {
-                    // Позиции без фона
-                    worksheet.Cell(currentRow, 1).Value = $"{stageNumber}.{itemNumber}";
-                    worksheet.Cell(currentRow, 2).Value = item.Name;
-                    worksheet.Cell(currentRow, 3).Value = item.Unit;
-                    worksheet.Cell(currentRow, 4).Value = (double)item.Quantity;
-                    worksheet.Cell(currentRow, 5).Value = (double)item.CustomerPrice;
-                    worksheet.Cell(currentRow, 5).Style.NumberFormat.Format = "#,##0";
-                    worksheet.Cell(currentRow, 6).Value = (double)(item.CustomerPrice * item.Quantity);
-                    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0";
-                    currentRow++;
-                    itemNumber++;
-                }
-            }
-            
-            stageNumber++;
+            groupNumber++;
         }
         
-        // Итоговая строка с линией
-        currentRow++;
-        worksheet.Cell(currentRow, 1).Value = "";
-        worksheet.Range(currentRow, 1, currentRow, 6).Style.Border.TopBorder = ClosedXML.Excel.XLBorderStyleValues.Thin;
-        currentRow++;
+        // Позиции без группы
+        var ungroupedItems = data.Items.Where(i => i.StageId == stage.Id && !i.GroupId.HasValue)
+                                       .OrderBy(i => i.OrderIndex)
+                                       .ToList();
+        if (ungroupedItems.Any())
+        {
+            var ungroupedTotal = ungroupedItems.Sum(i => i.CustomerPrice * i.Quantity);
+            
+            // Заголовок позиций без группы с нежно-оранжевым фоном
+            worksheet.Cell(currentRow, 2).Value = "  Позиции без группы";
+            worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
+            worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#FFF3E0"); // Colors.Orange.Lighten4
+            worksheet.Cell(currentRow, 6).Value = (double)ungroupedTotal;
+            worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
+            worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+            worksheet.Range(currentRow, 1, currentRow, 6).Merge();
+            currentRow++;
+            
+            int itemNumber = 1;
+            foreach (var item in ungroupedItems)
+            {
+                worksheet.Cell(currentRow, 1).Value = $"{stageNumber}.{itemNumber}";
+                worksheet.Cell(currentRow, 2).Value = item.Name;
+                worksheet.Cell(currentRow, 3).Value = item.Unit;
+                worksheet.Cell(currentRow, 4).Value = (double)item.Quantity;
+                worksheet.Cell(currentRow, 5).Value = (double)item.CustomerPrice;
+                worksheet.Cell(currentRow, 5).Style.NumberFormat.Format = "#,##0";
+                worksheet.Cell(currentRow, 6).Value = (double)(item.CustomerPrice * item.Quantity);
+                worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0";
+                currentRow++;
+                itemNumber++;
+            }
+        }
         
-        worksheet.Cell(currentRow, 5).Value = "ВСЕГО ПО СМЕТЕ:";
-        worksheet.Cell(currentRow, 5).Style.Font.Bold = true;
-        worksheet.Cell(currentRow, 6).Value = (double)data.Estimate.CustomerPrice;
-        worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
-        worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
-        
-        worksheet.Columns().AdjustToContents();
-        
-        using var ms = new MemoryStream();
-        workbook.SaveAs(ms);
-        return ms.ToArray();
+        stageNumber++;
     }
+    
+    // Отсекающая линия перед итогом
+    currentRow++;
+    worksheet.Range(currentRow, 1, currentRow, 6).Style.Border.TopBorder = ClosedXML.Excel.XLBorderStyleValues.Thin;
+    currentRow++;
+    
+    // Общий итог
+    worksheet.Cell(currentRow, 5).Value = "ВСЕГО ПО СМЕТЕ:";
+    worksheet.Cell(currentRow, 5).Style.Font.Bold = true;
+    worksheet.Cell(currentRow, 6).Value = (double)data.Estimate.CustomerPrice;
+    worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
+    worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
+    
+    // Автоматическая подгонка ширины колонок
+    worksheet.Columns().AdjustToContents();
+    
+    using var ms = new MemoryStream();
+    workbook.SaveAs(ms);
+    return ms.ToArray();
+}    
     
     private byte[] GetLogoPath()
     {

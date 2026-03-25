@@ -3147,23 +3147,31 @@ private void TogglePrintDropdown()
     private decimal GetStageProfit(int stageId) => GetStageCustomerTotal(stageId) - GetStageTotal(stageId);
 
     // Метод для безопасного форматирования чисел
-    private string FormatNumber(decimal value)
+private string FormatNumber(decimal value)
+{
+    try
     {
-        try
-        {
-            if (value >= 1_000_000_000)
-                return $"{(value / 1_000_000_000):F1} млрд";
-            if (value >= 1_000_000)
-                return $"{(value / 1_000_000):F1} млн";
-            if (value >= 1_000)
-                return $"{(value / 1_000):F1} тыс";
-            return value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
-        }
-        catch
-        {
-            return "0";
-        }
+        // return value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+        // ЗАКОММЕНТИРОВАНО: сокращенный вывод (тыс, млн, млрд)
+        // if (value >= 1_000_000_000)
+        //     return $"{(value / 1_000_000_000):F1} млрд";
+        // if (value >= 1_000_000)
+        //     return $"{(value / 1_000_000):F1} млн";
+        // if (value >= 1_000)
+        //     return $"{(value / 1_000):F1} тыс";
+        //return value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+         // Используем культуру с пробелом как разделителем тысяч
+        var culture = (System.Globalization.CultureInfo)System.Globalization.CultureInfo.InvariantCulture.Clone();
+        culture.NumberFormat.NumberGroupSeparator = " ";
+        culture.NumberFormat.NumberDecimalSeparator = ",";
+        
+        return value.ToString("N0", culture);
     }
+    catch
+    {
+        return "0";
+    }
+}
 
     // НОВЫЙ МЕТОД: печать документа
     private async Task PrintDocument(string type)

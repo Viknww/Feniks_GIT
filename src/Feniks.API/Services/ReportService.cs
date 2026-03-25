@@ -124,105 +124,100 @@ public class ReportService
                     col.Item().PaddingTop(10);
                     
                     // ==================== ТАБЛИЦА ПОЗИЦИЙ ====================
-                    
-                    col.Item().Table(table =>
-                    {
-                        table.ColumnsDefinition(columns =>
-                        {
-                            columns.ConstantColumn(60);
-                            columns.RelativeColumn(3);
-                            columns.ConstantColumn(60);
-                            columns.ConstantColumn(70);
-                            columns.ConstantColumn(80);
-                            columns.ConstantColumn(90);
-                        });
-                        
-                        // Заголовки
-                        table.Header(header =>
-                        {
-                            header.Cell().Text("№").Bold().AlignCenter();
-                            header.Cell().Text("Наименование").Bold();
-                            header.Cell().Text("Ед. изм.").Bold().AlignCenter();
-                            header.Cell().Text("Кол-во").Bold().AlignRight();
-                            header.Cell().Text("Цена, руб.").Bold().AlignRight();
-                            header.Cell().Text("Сумма, руб.").Bold().AlignRight();
-                        });
-                        
-                        int stageNumber = 1;
-                        
-                        foreach (var stage in data.Stages.OrderBy(s => s.OrderIndex))
-                        {
-                            // Заголовок этапа
-                            table.Cell().ColumnSpan(4).Text($"{stageNumber}. {stage.Name}").Bold();
-                            
-                            // Итог этапа
-                            var stageTotal = data.Items.Where(i => i.StageId == stage.Id).Sum(i => i.CustomerPrice * i.Quantity);
-                            table.Cell().ColumnSpan(2).AlignRight().Text($"{stageTotal:N0} руб.").Bold();
-                            
-                            var stageGroups = data.Groups.Where(g => g.StageId == stage.Id).OrderBy(g => g.OrderIndex).ToList();
-                            int groupNumber = 1;
-                            
-                            foreach (var group in stageGroups)
-                            {
-                                // Заголовок группы
-                                table.Cell().ColumnSpan(4).Text($"  {stageNumber}.{groupNumber}. {group.Name}").Bold();
-                                
-                                // Итог группы
-                                var groupTotal = data.Items.Where(i => i.GroupId == group.Id).Sum(i => i.CustomerPrice * i.Quantity);
-                                table.Cell().ColumnSpan(2).AlignRight().Text($"{groupTotal:N0} руб.").Bold();
-                                
-                                var groupItems = data.Items.Where(i => i.GroupId == group.Id).OrderBy(i => i.OrderIndex).ToList();
-                                int itemNumber = 1;
-                                foreach (var item in groupItems)
-                                {
-                                    table.Cell().Text($"{stageNumber}.{groupNumber}.{itemNumber}").AlignCenter();
-                                    table.Cell().Text(item.Name);
-                                    table.Cell().Text(item.Unit).AlignCenter();
-                                    table.Cell().Text($"{item.Quantity:N2}").AlignRight();
-                                    table.Cell().Text($"{item.CustomerPrice:N0}").AlignRight();
-                                    table.Cell().Text($"{(item.CustomerPrice * item.Quantity):N0}").AlignRight();
-                                    itemNumber++;
-                                }
-                                groupNumber++;
-                            }
-                            
-                            // Позиции без группы
-                            var ungroupedItems = data.Items.Where(i => i.StageId == stage.Id && !i.GroupId.HasValue)
-                                                           .OrderBy(i => i.OrderIndex)
-                                                           .ToList();
-                            if (ungroupedItems.Any())
-                            {
-                                table.Cell().ColumnSpan(4).Text("  Позиции без группы").Bold();
-                                
-                                var ungroupedTotal = ungroupedItems.Sum(i => i.CustomerPrice * i.Quantity);
-                                table.Cell().ColumnSpan(2).AlignRight().Text($"{ungroupedTotal:N0} руб.").Bold();
-                                
-                                int itemNumber = 1;
-                                foreach (var item in ungroupedItems)
-                                {
-                                    table.Cell().Text($"{stageNumber}.{itemNumber}").AlignCenter();
-                                    table.Cell().Text(item.Name);
-                                    table.Cell().Text(item.Unit).AlignCenter();
-                                    table.Cell().Text($"{item.Quantity:N2}").AlignRight();
-                                    table.Cell().Text($"{item.CustomerPrice:N0}").AlignRight();
-                                    table.Cell().Text($"{(item.CustomerPrice * item.Quantity):N0}").AlignRight();
-                                    itemNumber++;
-                                }
-                            }
-                            
-                            stageNumber++;
-                        }
-                        
-                        // Отсекающая линия перед итогом
-                        table.Cell().ColumnSpan(6).Element(cell =>
-                        {
-                            cell.BorderTop(0.5f);
-                        });
-                        
-                        // Общий итог
-                        table.Cell().ColumnSpan(4).AlignRight().Text($"ВСЕГО ПО СМЕТЕ:").Bold();
-                        table.Cell().ColumnSpan(2).AlignRight().Text($"{data.Estimate.CustomerPrice:N0} руб.").Bold();
-                    });
+
+col.Item().Table(table =>
+{
+    table.ColumnsDefinition(columns =>
+    {
+        columns.ConstantColumn(60);
+        columns.RelativeColumn(3);
+        columns.ConstantColumn(60);
+        columns.ConstantColumn(70);
+        columns.ConstantColumn(80);
+        columns.ConstantColumn(90);
+    });
+    
+    // Заголовки
+    table.Header(header =>
+    {
+        header.Cell().Background(Colors.Grey.Lighten2).Text("№").Bold().AlignCenter();
+        header.Cell().Background(Colors.Grey.Lighten2).Text("Наименование").Bold();
+        header.Cell().Background(Colors.Grey.Lighten2).Text("Ед. изм.").Bold().AlignCenter();
+        header.Cell().Background(Colors.Grey.Lighten2).Text("Кол-во").Bold().AlignRight();
+        header.Cell().Background(Colors.Grey.Lighten2).Text("Цена, руб.").Bold().AlignRight();
+        header.Cell().Background(Colors.Grey.Lighten2).Text("Сумма, руб.").Bold().AlignRight();
+    });
+    
+    int stageNumber = 1;
+    
+    foreach (var stage in data.Stages.OrderBy(s => s.OrderIndex))
+    {
+        // Заголовок этапа с итогом - используем обычную строку
+        table.Cell().ColumnSpan(4).Background(Colors.Blue.Lighten4).Text($"{stageNumber}. {stage.Name}").Bold();
+        
+        var stageTotal = data.Items.Where(i => i.StageId == stage.Id).Sum(i => i.CustomerPrice * i.Quantity);
+        table.Cell().ColumnSpan(2).Background(Colors.Blue.Lighten4).AlignRight().Text($"{stageTotal:N0} руб.").Bold();
+        
+        var stageGroups = data.Groups.Where(g => g.StageId == stage.Id).OrderBy(g => g.OrderIndex).ToList();
+        int groupNumber = 1;
+        
+        foreach (var group in stageGroups)
+        {
+            // Заголовок группы с итогом
+            table.Cell().ColumnSpan(4).Background(Colors.Yellow.Lighten4).Text($"  {stageNumber}.{groupNumber}. {group.Name}").Bold();
+            
+            var groupTotal = data.Items.Where(i => i.GroupId == group.Id).Sum(i => i.CustomerPrice * i.Quantity);
+            table.Cell().ColumnSpan(2).Background(Colors.Yellow.Lighten4).AlignRight().Text($"{groupTotal:N0} руб.").Bold();
+            
+            var groupItems = data.Items.Where(i => i.GroupId == group.Id).OrderBy(i => i.OrderIndex).ToList();
+            int itemNumber = 1;
+            foreach (var item in groupItems)
+            {
+                table.Cell().Text($"{stageNumber}.{groupNumber}.{itemNumber}").AlignCenter();
+                table.Cell().Text(item.Name);
+                table.Cell().Text(item.Unit).AlignCenter();
+                table.Cell().Text($"{item.Quantity:N2}").AlignRight();
+                table.Cell().Text($"{item.CustomerPrice:N0}").AlignRight();
+                table.Cell().Text($"{(item.CustomerPrice * item.Quantity):N0}").AlignRight();
+                itemNumber++;
+            }
+            groupNumber++;
+        }
+        
+        // Позиции без группы
+        var ungroupedItems = data.Items.Where(i => i.StageId == stage.Id && !i.GroupId.HasValue)
+                                       .OrderBy(i => i.OrderIndex)
+                                       .ToList();
+        if (ungroupedItems.Any())
+        {
+            table.Cell().ColumnSpan(4).Background(Colors.Orange.Lighten4).Text("  Позиции без группы").Bold();
+            
+            var ungroupedTotal = ungroupedItems.Sum(i => i.CustomerPrice * i.Quantity);
+            table.Cell().ColumnSpan(2).Background(Colors.Orange.Lighten4).AlignRight().Text($"{ungroupedTotal:N0} руб.").Bold();
+            
+            int itemNumber = 1;
+            foreach (var item in ungroupedItems)
+            {
+                table.Cell().Text($"{stageNumber}.{itemNumber}").AlignCenter();
+                table.Cell().Text(item.Name);
+                table.Cell().Text(item.Unit).AlignCenter();
+                table.Cell().Text($"{item.Quantity:N2}").AlignRight();
+                table.Cell().Text($"{item.CustomerPrice:N0}").AlignRight();
+                table.Cell().Text($"{(item.CustomerPrice * item.Quantity):N0}").AlignRight();
+                itemNumber++;
+            }
+        }
+        
+        stageNumber++;
+    }
+    
+    // Отсекающая линия перед итогом
+    table.Cell().ColumnSpan(6).BorderTop(0.5f);
+    
+    // Общий итог
+    table.Cell().ColumnSpan(4).AlignRight().Text($"ВСЕГО ПО СМЕТЕ:").Bold();
+    table.Cell().ColumnSpan(2).AlignRight().Text($"{data.Estimate.CustomerPrice:N0} руб.").Bold();
+});
                     
                     // ==================== КОММЕНТАРИЙ ====================
                     
@@ -332,7 +327,7 @@ public class ReportService
             var stageTotal = data.Items.Where(i => i.StageId == stage.Id).Sum(i => i.CustomerPrice * i.Quantity);
             worksheet.Cell(currentRow, 2).Value = $"{stageNumber}. {stage.Name}";
             worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
-            worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightCyan;
+            worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#FFE6E6"); // нежно-персиковый
             worksheet.Cell(currentRow, 6).Value = (double)stageTotal;
             worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
             worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
@@ -347,7 +342,7 @@ public class ReportService
                 var groupTotal = data.Items.Where(i => i.GroupId == group.Id).Sum(i => i.CustomerPrice * i.Quantity);
                 worksheet.Cell(currentRow, 2).Value = $"  {stageNumber}.{groupNumber}. {group.Name}";
                 worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
-                worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightYellow;
+                worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#E6FFE6"); // нежно-зеленый
                 worksheet.Cell(currentRow, 6).Value = (double)groupTotal;
                 worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
                 worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
@@ -358,6 +353,7 @@ public class ReportService
                 int itemNumber = 1;
                 foreach (var item in groupItems)
                 {
+                    // Позиции без фона
                     worksheet.Cell(currentRow, 1).Value = $"{stageNumber}.{groupNumber}.{itemNumber}";
                     worksheet.Cell(currentRow, 2).Value = item.Name;
                     worksheet.Cell(currentRow, 3).Value = item.Unit;
@@ -380,7 +376,7 @@ public class ReportService
                 var ungroupedTotal = ungroupedItems.Sum(i => i.CustomerPrice * i.Quantity);
                 worksheet.Cell(currentRow, 2).Value = "  Позиции без группы";
                 worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
-                worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightGray;
+                worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#F2F2F2"); // нежно-серый
                 worksheet.Cell(currentRow, 6).Value = (double)ungroupedTotal;
                 worksheet.Cell(currentRow, 6).Style.Font.Bold = true;
                 worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0 \"руб.\"";
@@ -390,6 +386,7 @@ public class ReportService
                 int itemNumber = 1;
                 foreach (var item in ungroupedItems)
                 {
+                    // Позиции без фона
                     worksheet.Cell(currentRow, 1).Value = $"{stageNumber}.{itemNumber}";
                     worksheet.Cell(currentRow, 2).Value = item.Name;
                     worksheet.Cell(currentRow, 3).Value = item.Unit;

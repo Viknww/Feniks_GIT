@@ -445,12 +445,23 @@
                     </div>
                 }
                 
+                
                 <!-- Кнопка добавления нового этапа -->
                 <div class="text-center mt-4">
                     <button class="btn btn-outline-primary btn-lg" @onclick="AddStage">
                         <i class="bi bi-plus-circle me-2"></i>Добавить этап
                     </button>
                 </div>
+
+                <!-- Поле для комментариев -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Комментарий</label>
+                    <textarea class="form-control" @bind="editComment" @bind:event="oninput" rows="10" 
+                            placeholder="Введите комментарий к смете"
+                            @onblur="SaveComment"></textarea>
+                    <small class="text-muted">Поддерживается многострочный текст</small>
+                </div>
+
             }
         </div>
 
@@ -1008,6 +1019,9 @@
 
 @code {
     [Parameter] public int Id { get; set; }
+
+    // поле для комментария
+    private string editComment = "";
 
     // Поля для добавления новой позиции с созданием группы
     private bool isCreatingNewGroupInAdd = false;
@@ -1779,6 +1793,7 @@ private void TogglePrintDropdown()
 
             if (estimate != null)
             {
+                editComment = estimate.Comment ?? ""; // ДОБАВЛЕНО
                 var obj = await Http.GetFromJsonAsync<SharedConstructionObject>($"http://localhost:5050/api/ConstructionObjects/{estimate.ConstructionObjectId}");
                 objectName = obj?.Name ?? "Неизвестно";
 
@@ -2946,6 +2961,7 @@ private void TogglePrintDropdown()
             editStatus = estimate.Status;
             editManagerName = estimate.ManagerName ?? "";
             editManagerEmail = estimate.ManagerEmail ?? "";
+            editComment = estimate.Comment ?? ""; // ДОБАВЛЕНО
             
             showEditModal = true;
             StateHasChanged();
@@ -2981,7 +2997,8 @@ private void TogglePrintDropdown()
                 ManagerEmail = editManagerEmail,
                 ConstructionObjectId = estimate?.ConstructionObjectId ?? 0,
                 TotalCost = estimate?.TotalCost ?? 0,
-                CustomerPrice = estimate?.CustomerPrice ?? 0
+                CustomerPrice = estimate?.CustomerPrice ?? 0,
+                Comment = editComment // ДОБАВЛЕНО
             };
 
             var response = await Http.PutAsJsonAsync($"http://localhost:5050/api/Estimates/{Id}", update);
@@ -2995,6 +3012,7 @@ private void TogglePrintDropdown()
                     estimate.Status = editStatus;
                     estimate.ManagerName = editManagerName;
                     estimate.ManagerEmail = editManagerEmail;
+                    estimate.Comment = editComment; // ДОБАВЛЕНО
                 }
 
                 await NotifyChanges();
@@ -3172,6 +3190,57 @@ private string FormatNumber(decimal value)
         return "0";
     }
 }
+
+    private async Task SaveComment()
+    {
+        if (estimate == null) return;
+        
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+            
+            var update = new
+            {
+                Id = estimate.Id,
+                Name = estimate.Name,
+                Description = estimate.Description,
+                Status = estimate.Status,
+                ManagerName = estimate.ManagerName,
+                ManagerEmail = estimate.ManagerEmail,
+                ConstructionObjectId = estimate.ConstructionObjectId,
+                TotalCost = estimate.TotalCost,
+                CustomerPrice = estimate.CustomerPrice,
+                Comment = editComment
+            };
+            
+            var response = await Http.PutAsJsonAsync($"http://localhost:5050/api/Estimates/{estimate.Id}", update);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                if (estimate != null)
+                {
+                    estimate.Comment = editComment;
+                }
+                await NotifyChanges();
+                await JS.InvokeVoidAsync("console.log", "✅ Комментарий сохранен");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Ошибка сохранения комментария: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
 
     // НОВЫЙ МЕТОД: печать документа
     private async Task PrintDocument(string type)

@@ -27,6 +27,9 @@ public class Estimate
     public string? ManagerName { get; set; }
     public string? ManagerEmail { get; set; }
     
+    // НОВОЕ ПОЛЕ ДЛЯ КОММЕНТАРИЯ
+    public string? Comment { get; set; }
+    
     public ICollection<EstimateStage> Stages { get; set; } = new List<EstimateStage>();
     public ICollection<EstimateItem> Items { get; set; } = new List<EstimateItem>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();

@@ -32,8 +32,12 @@ public class EstimatesController : ControllerBase
     
     [HttpPost]
     public async Task<ActionResult<Estimate>> CreateEstimate(Estimate estimate)
-    {
+   {
         estimate.CreatedAt = DateTime.Now;
+        
+        // Устанавливаем комментарий по умолчанию
+        estimate.Comment = "Комментарий\n\nПримечания:\n1) в процессе производства работ объемы и состав работ может изменяться как в большую, так и в меньшую сторону, расчет будет производится по фактически выполненным объемам.\n2) работы и материалы не учтенные данным КП будут оформляться дополнительным соглашением.\n3) данное КП предусматривает оплату наличным расчетом.\n4) при оплате по безналичному расчету, удорожание КП составит 10%";
+        
         _context.Estimates.Add(estimate);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetEstimate), new { id = estimate.Id }, estimate);
@@ -64,6 +68,7 @@ public class EstimatesController : ControllerBase
         existingEstimate.ConstructionObjectId = estimate.ConstructionObjectId;
         existingEstimate.TotalCost = estimate.TotalCost;
         existingEstimate.CustomerPrice = estimate.CustomerPrice;
+        existingEstimate.Comment = estimate.Comment; // ДОБАВЛЕНО ОБНОВЛЕНИЕ КОММЕНТАРИЯ
         // CreatedAt не обновляем - оставляем оригинал
 
         try
@@ -102,31 +107,32 @@ public class EstimatesController : ControllerBase
     {
         return _context.Estimates.Any(e => e.Id == id);
     }
+    
     [HttpPost("recalculate-all")]
-public async Task<IActionResult> RecalculateAllEstimates()
-{
-    var estimates = await _context.Estimates.ToListAsync();
-    var count = 0;
-    
-    foreach (var estimate in estimates)
+    public async Task<IActionResult> RecalculateAllEstimates()
     {
-        var items = await _context.EstimateItems
-            .Where(i => i.EstimateId == estimate.Id)
-            .ToListAsync();
+        var estimates = await _context.Estimates.ToListAsync();
+        var count = 0;
         
-        var newTotalCost = items.Sum(i => i.Price * i.Quantity);
-        var newCustomerPrice = items.Sum(i => i.CustomerPrice * i.Quantity);
-        
-        if (estimate.TotalCost != newTotalCost || estimate.CustomerPrice != newCustomerPrice)
+        foreach (var estimate in estimates)
         {
-            estimate.TotalCost = newTotalCost;
-            estimate.CustomerPrice = newCustomerPrice;
-            count++;
+            var items = await _context.EstimateItems
+                .Where(i => i.EstimateId == estimate.Id)
+                .ToListAsync();
+            
+            var newTotalCost = items.Sum(i => i.Price * i.Quantity);
+            var newCustomerPrice = items.Sum(i => i.CustomerPrice * i.Quantity);
+            
+            if (estimate.TotalCost != newTotalCost || estimate.CustomerPrice != newCustomerPrice)
+            {
+                estimate.TotalCost = newTotalCost;
+                estimate.CustomerPrice = newCustomerPrice;
+                count++;
+            }
         }
+        
+        await _context.SaveChangesAsync();
+        
+        return Ok(new { message = $"Пересчитано {count} смет из {estimates.Count}" });
     }
-    
-    await _context.SaveChangesAsync();
-    
-    return Ok(new { message = $"Пересчитано {count} смет из {estimates.Count}" });
-}
 }

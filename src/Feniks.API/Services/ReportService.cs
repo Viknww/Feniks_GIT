@@ -220,20 +220,26 @@ col.Item().Table(table =>
     table.Cell().ColumnSpan(2).AlignRight().Text($"{data.Estimate.CustomerPrice:N0} руб.").Bold();
 });
                     
-                    // ==================== КОММЕНТАРИЙ ====================
-                    
-                    col.Item().PaddingTop(15).Text("Комментарий").FontSize(8).Bold();
-                    col.Item().PaddingTop(5).Text("Примечания:").FontSize(8).Bold();
-                    col.Item().PaddingTop(3).Text("1) в процессе производства работ объемы и состав работ может изменяться как в большую, так и в меньшую сторону, расчет будет производится по фактически выполненным объемам.").FontSize(8);
-                    col.Item().PaddingTop(2).Text("2) работы и материалы не учтенные данным КП будут оформляться дополнительным соглашением.").FontSize(8);
-                    col.Item().PaddingTop(2).Text("3) данное КП предусматривает оплату наличным расчетом.").FontSize(8);
-                    
-                    // Подписи
-                    col.Item().PaddingTop(15).Row(row =>
+                   // ==================== КОММЕНТАРИЙ ====================
+
+                    // Используем комментарий из сметы, если он есть
+                    if (!string.IsNullOrEmpty(data.Estimate.Comment))
                     {
-                        row.RelativeItem().Text("ПОДРЯДЧИК: _________________");
-                        row.RelativeItem().Text("ЗАКАЗЧИК: _________________");
-                    });
+                        var commentLines = data.Estimate.Comment.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                        
+                        foreach (var line in commentLines)
+                        {
+                            if (line == commentLines[0])
+                            {
+                                col.Item().PaddingTop(15).Text(line).FontSize(8).Bold();
+                            }
+                            else
+                            {
+                                col.Item().PaddingTop(2).Text(line).FontSize(8);
+                            }
+                        }
+                    }
+                    // Если комментарий NULL или пустой - ничего не выводим
                 });
                 
                 // ==================== НИЖНИЙ КОЛОНТИТУЛ ====================
